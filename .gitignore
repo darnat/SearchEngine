@@ -1,2 +1,15 @@
 **/*.class
 **/*.json
+.classpath
+.project
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+searchEngine.jar
+dummy/*
