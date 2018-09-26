@@ -158,10 +158,11 @@ public class BooleanQueryParser {
 
 		if (subquery.startsWith("\"")) {
 			List<String> terms = new ArrayList<>();
+			// Find next double quote
 			int nextDoubleQuote = subquery.indexOf('"', startIndex + 1);
-			lengthOut = nextDoubleQuote - startIndex;
-			System.out.println("Parsed substring: " + subquery.substring(startIndex, nextDoubleQuote));
-			terms.addAll(Arrays.asList(subquery.substring(startIndex, nextDoubleQuote).split(" ")));
+			lengthOut = nextDoubleQuote - startIndex + 1;
+			// Add terms to array without the double quotes
+			terms.addAll(Arrays.asList(subquery.substring(startIndex + 1, nextDoubleQuote).split(" ")));
 			return new Literal(
 				new StringBounds(startIndex, lengthOut),
 				new PhraseLiteral(terms, processor)
