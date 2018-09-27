@@ -11,6 +11,7 @@ import cecs429.query.QueryComponent;
 import cecs429.text.DefaultTokenProcessor;
 import cecs429.text.EnglishTokenStream;
 import cecs429.text.TokenProcessor;
+import cecs429.text.Sanitizer;
 
 import java.nio.file.Paths;
 import java.util.*;
@@ -43,7 +44,7 @@ public class PositionalInvertedIndexer {
 			if (query.equals(":q")) {
 				break;
 			} else if (query.startsWith(":stem")) {
-				System.out.println("Stemmed token: " + processor.stemToken(query.split(" ")[1]));
+				System.out.println("Stemmed token: " + Sanitizer.getInstance().stemToken(query.split(" ")[1]));
 			} else if (query.startsWith(":index")) {
 				corpus = DirectoryCorpus.loadJsonDirectory(Paths.get(query.split(" ")[1]).toAbsolutePath(), ".json");
 				System.out.println("Indexing in progress...");

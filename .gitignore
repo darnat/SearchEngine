@@ -13,3 +13,8 @@ compile_commands.json
 CTestTestfile.cmake
 searchEngine.jar
 dummy/*
+build.xml
+manifest.mf
+build/
+corpus/
+nbproject/

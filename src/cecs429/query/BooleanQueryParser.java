@@ -42,6 +42,9 @@ public class BooleanQueryParser {
 	 * Given a boolean query, parses and returns a tree of QueryComponents representing the query.
 	 */
 	public QueryComponent parseQuery(String query) {
+
+		query = Sanitizer.getInstance().sanitize(query);
+
 		int start = 0;
 		
 		// General routine: scan the query to identify a literal, and put that literal into a list.
@@ -147,7 +150,7 @@ public class BooleanQueryParser {
 		TokenProcessor processor = new DefaultTokenProcessor();
 		int subLength = subquery.length();
 		int lengthOut;
-		
+
 		// Skip past white space.
 		while (subquery.charAt(startIndex) == ' ') {
 			++startIndex;
@@ -155,10 +158,11 @@ public class BooleanQueryParser {
 
 		if (subquery.startsWith("\"")) {
 			List<String> terms = new ArrayList<>();
+			// Find next double quote
 			int nextDoubleQuote = subquery.indexOf('"', startIndex + 1);
-			lengthOut = nextDoubleQuote - startIndex;
-			System.out.println("Parsed substring: " + subquery.substring(startIndex, nextDoubleQuote));
-			terms.addAll(Arrays.asList(subquery.substring(startIndex, nextDoubleQuote).split(" ")));
+			lengthOut = nextDoubleQuote - startIndex + 1;
+			// Add terms to array without the double quotes
+			terms.addAll(Arrays.asList(subquery.substring(startIndex + 1, nextDoubleQuote).split(" ")));
 			return new Literal(
 				new StringBounds(startIndex, lengthOut),
 				new PhraseLiteral(terms, processor)
