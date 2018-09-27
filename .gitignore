@@ -15,3 +15,6 @@ searchEngine.jar
 dummy/*
 build.xml
 manifest.mf
+build/
+corpus/
+nbproject/
