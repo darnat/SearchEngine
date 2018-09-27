@@ -7,27 +7,31 @@ import java.util.*;
  * A Posting encapulates a document ID associated with a search query component.
  */
 public class Posting {
-	List<Integer> positions = new ArrayList<>();
+	private List<Integer> mPositions = new ArrayList<>();
 	private int mDocumentId;
 	
 	public Posting(int documentId, int position) {
 		mDocumentId = documentId;
-		positions.add(position);
+		mPositions.add(position);
 	}
 	
 	public int getDocumentId() {
 		return mDocumentId;
 	}
 
+	public List<Integer> getPositions() {
+		return mPositions;
+	}
+
 	public void addPosition(int position) {
-		positions.add(position);
+		mPositions.add(position);
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder postingSB = new StringBuilder();
 		postingSB.append("DocumentId: " + mDocumentId + ", Positions: [ ");
-		for (Integer pos : positions) {
+		for (Integer pos : mPositions) {
 			postingSB.append(pos + " ");
 		}
 		postingSB.append("]");
