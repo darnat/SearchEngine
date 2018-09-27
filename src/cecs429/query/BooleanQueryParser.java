@@ -43,7 +43,7 @@ public class BooleanQueryParser {
 	 */
 	public QueryComponent parseQuery(String query) {
 
-		query = Sanitizer.sanitize(query);
+		query = Sanitizer.getInstance().sanitize(query);
 
 		int start = 0;
 		
