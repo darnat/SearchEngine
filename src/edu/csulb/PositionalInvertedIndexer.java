@@ -3,6 +3,7 @@ package edu.csulb;
 import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
 import cecs429.documents.DocumentCorpus;
+import cecs429.documents.Snippet;
 import cecs429.index.Index;
 import cecs429.index.PositionalInvertedIndex;
 import cecs429.index.Posting;
@@ -12,6 +13,8 @@ import cecs429.text.DefaultTokenProcessor;
 import cecs429.text.EnglishTokenStream;
 import cecs429.text.TokenProcessor;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -65,11 +68,35 @@ public class PositionalInvertedIndexer {
 					List<Posting> postings = qc.getPostings(index);
 
 					if (!postings.isEmpty()) {
-						for (Posting p : postings) {
-							System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
+						for (int i = 0; i < postings.size(); i++) {
+							System.out.println(i + ": " + corpus.getDocument(postings.get(i).getDocumentId()).getTitle());
 						}
 						System.out.println("Number of documents: " + postings.size());
-						// TODO: Ask user if he wishes to view a document 
+						System.out.print("\n\nDo you wish to select a document to view? (y, n) ");
+						String docRequested = sc.nextLine();
+						if (docRequested.toLowerCase().equals("y")) {
+							System.out.print("Please enter a list number from the list above: ");
+							int docId = sc.nextInt();
+							BufferedReader in = new BufferedReader(corpus.getDocument(docId).getContent());
+							String line = null;
+							try {
+								while ((line = in.readLine()) != null) {
+									System.out.println(line);
+								}
+							} catch(IOException ex) {
+								System.out.println("Error reading document.");
+							}
+							// Flush the buffer
+							sc.nextLine();
+
+							// Print snippet
+							Snippet snip = new Snippet(
+								corpus.getDocument(docId).getContent(),
+								postings.get(docId).getPositions(),
+								qc
+							);
+							System.out.println("\n\nSnippet: " + snip.getContent());
+						}
 					} else {
 						System.out.println("Term was not found.");
 					}
