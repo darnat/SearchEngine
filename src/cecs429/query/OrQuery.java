@@ -22,11 +22,11 @@ public class OrQuery implements QueryComponent {
 	// unioning the resulting postings.
 	@Override
 	public List<Posting> getPostings(Index index) {
-            List<Posting> result = new ArrayList<Posting>();
+            List<Posting> result = new ArrayList<>();
             Boolean init = true;
 
             for (QueryComponent qc : mComponents) {
-                if (init) {
+                if (init) { //initalize result
                     result = qc.getPostings(index);
                     init = false;
                 } else {
@@ -41,9 +41,11 @@ public class OrQuery implements QueryComponent {
         //printList(list1);
         //printList(list2);
         
-        List<Posting> result = new ArrayList<Posting>();
-
-        for(int i = 0, j = 0; i < list1.size() && j < list2.size(); ) {
+        List<Posting> result = new ArrayList<>();
+        int i = 0, j = 0;
+        
+        //while both lists are inbounds
+        while (i < list1.size() == j < list2.size()) {
             if (list1.get(i).getDocumentId() == list2.get(j).getDocumentId()) {
                 result.add(list1.get(i));
                 ++i;
@@ -59,25 +61,41 @@ public class OrQuery implements QueryComponent {
             }
         }
         
+        //Add the rest of either list if lists are not the same size
+        if (list1.size() != list2.size()) {
+            if (j == list2.size()) {
+                //add the rest of list1
+                for(; i < list1.size(); ++i) {
+                    result.add(list1.get(i));
+                }
+            } else if (i == list1.size()) {
+                //add the rest of list2
+                for(; j < list2.size(); ++j) {
+                    result.add(list2.get(j));
+                }
+            }
+        }
+        
         //System.out.print("Result: ");
         //printList(result);
 
         return result;
     }
     
+    //Print list of doc ids (for debugging)
     private void printList(List<Posting> list) {
         System.out.print("[");
-        for (Posting p : list) {
-            System.out.print(p.getDocumentId() + ", ");
-        }
+        list.forEach((docID) -> {
+            System.out.print(docID.getDocumentId() + ", ");
+            });
         System.out.println("]");
     }
       
 	@Override
 	public String toString() {
-		// Returns a string of the form "[SUBQUERY] + [SUBQUERY] + [SUBQUERY]"
-		return "(" +
-		 String.join(" + ", mComponents.stream().map(c -> c.toString()).collect(Collectors.toList()))
-		 + " )";
+            // Returns a string of the form "[SUBQUERY] + [SUBQUERY] + [SUBQUERY]"
+            return "(" +
+             String.join(" + ", mComponents.stream().map(c -> c.toString()).collect(Collectors.toList()))
+             + " )";
 	}
 }

@@ -42,6 +42,9 @@ public class BooleanQueryParser {
 	 * Given a boolean query, parses and returns a tree of QueryComponents representing the query.
 	 */
 	public QueryComponent parseQuery(String query) {
+
+		query = Sanitizer.getInstance().sanitize(query);
+
 		int start = 0;
 		
 		// General routine: scan the query to identify a literal, and put that literal into a list.
@@ -147,7 +150,7 @@ public class BooleanQueryParser {
 		TokenProcessor processor = new DefaultTokenProcessor();
 		int subLength = subquery.length();
 		int lengthOut;
-		
+
 		// Skip past white space.
 		while (subquery.charAt(startIndex) == ' ') {
 			++startIndex;

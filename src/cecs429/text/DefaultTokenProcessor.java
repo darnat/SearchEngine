@@ -1,7 +1,5 @@
 package cecs429.text;
 
-import libs.snowball.SnowballStemmer;
-
 import java.lang.*;
 import java.util.*;
 
@@ -14,21 +12,21 @@ import java.util.*;
  *   - Stemming token using Porter2 stemmer
  */
 public class DefaultTokenProcessor implements TokenProcessor {
-	private SnowballStemmer mStemmer;
+	// private SnowballStemmer mStemmer;
 
 	public DefaultTokenProcessor() {
-		try {
-			Class stemClass = Class.forName("libs.snowball.englishStemmer");
-			mStemmer = (SnowballStemmer) stemClass.newInstance();
-		} catch(Exception ex) {
-			System.out.println(ex);
-		}
+		// try {
+		// 	Class stemClass = Class.forName("libs.snowball.englishStemmer");
+		// 	mStemmer = (SnowballStemmer) stemClass.newInstance();
+		// } catch(Exception ex) {
+		// 	System.out.println(ex);
+		// }
 	}
 
 	@Override
 	public List<String> processToken(String token) {
 		List<String> terms = new ArrayList<>();
-
+		Sanitizer sanitizer = Sanitizer.getInstance();
 		String strToken = normalizeToken(token);
 
 		if (!strToken.isEmpty()) {
@@ -37,17 +35,17 @@ public class DefaultTokenProcessor implements TokenProcessor {
 				String unhyphenToken = strToken.replaceAll("-", "");
 				terms.add(unhyphenToken);
 				// Add stemmed as well
-				terms.add(stemToken(unhyphenToken));
+				terms.add(sanitizer.stemToken(unhyphenToken));
 
 				// Split on hyphens and add to terms list
 				String[] splitTokens = strToken.split("-");
 				for (String splitToken : splitTokens) {
-					terms.add(splitToken);
-					terms.add(stemToken(splitToken));
+					// terms.add(splitToken);
+					terms.add(sanitizer.stemToken(splitToken));
 				}
 			} else {
-				terms.add(strToken);
-				terms.add(stemToken(strToken));
+				// terms.add(strToken);
+				terms.add(sanitizer.stemToken(strToken));
 			}
 		}
 
@@ -73,9 +71,9 @@ public class DefaultTokenProcessor implements TokenProcessor {
 		return tokenSB.toString();
 	}
 
-	public String stemToken(String token) {
-		mStemmer.setCurrent(token);
-		mStemmer.stem();
-		return mStemmer.getCurrent();
-	}
+	// public String stemToken(String token) {
+	// 	mStemmer.setCurrent(token);
+	// 	mStemmer.stem();
+	// 	return mStemmer.getCurrent();
+	// }
 }
