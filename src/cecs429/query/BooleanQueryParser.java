@@ -166,6 +166,21 @@ public class BooleanQueryParser {
 				new StringBounds(startIndex, lengthOut),
 				new PhraseLiteral(terms)
 			);
+		} else if (subquery.startsWith("[")) {
+			List<String> terms = new ArrayList<>();
+			// Find next double quote
+			int closingBracketIndex = subquery.indexOf(']', startIndex + 1);
+			lengthOut = closingBracketIndex - startIndex + 1;
+                        
+			// Add terms to array without the double quotes
+			terms.addAll(Arrays.asList(subquery.substring(startIndex + 1, closingBracketIndex).split(" ")));
+
+			//System.out.println("Literal found: " + subquery.substring(startIndex + 1, nextDoubleQuote));
+
+			return new Literal(
+				new StringBounds(startIndex, lengthOut),
+				new NearLiteral(terms)
+			);
 		} else {		
 			// Locate the next space to find the end of this literal.
 			int nextSpace = subquery.indexOf(' ', startIndex);
