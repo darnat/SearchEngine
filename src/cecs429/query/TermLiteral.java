@@ -12,11 +12,9 @@ import java.util.List;
  */
 public class TermLiteral implements QueryComponent {
 	private String mTerm;
-	private TokenProcessor mProcessor;
 	
-	public TermLiteral(String term, TokenProcessor processor) {
+	public TermLiteral(String term) {
 		mTerm = term;
-		mProcessor = processor;
 	}
 	
 	public String getTerm() {
@@ -24,8 +22,8 @@ public class TermLiteral implements QueryComponent {
 	}
 	
 	@Override
-	public List<Posting> getPostings(Index index) {
-		return index.getPostings(((DefaultTokenProcessor) mProcessor).normalizeToken(mTerm));
+	public List<Posting> getPostings(Index index, TokenProcessor processor) {
+		return index.getPostings(((DefaultTokenProcessor) processor).normalizeAndStemToken(mTerm));
 	}
 	
 	@Override

@@ -12,44 +12,34 @@ import java.util.*;
  *   - Stemming token using Porter2 stemmer
  */
 public class DefaultTokenProcessor implements TokenProcessor {
-	// private SnowballStemmer mStemmer;
-
-	public DefaultTokenProcessor() {
-		// try {
-		// 	Class stemClass = Class.forName("libs.snowball.englishStemmer");
-		// 	mStemmer = (SnowballStemmer) stemClass.newInstance();
-		// } catch(Exception ex) {
-		// 	System.out.println(ex);
-		// }
-	}
-
+	private Stemmer mStemmer = Stemmer.getInstance();
+	
 	@Override
 	public List<String> processToken(String token) {
 		List<String> terms = new ArrayList<>();
-		Sanitizer sanitizer = Sanitizer.getInstance();
 		String strToken = normalizeToken(token);
 
 		if (!strToken.isEmpty()) {
 			if (strToken.contains("-")) {
 				// Remove hyphens and add to terms list
 				String unhyphenToken = strToken.replaceAll("-", "");
-				terms.add(unhyphenToken);
-				// Add stemmed as well
-				terms.add(sanitizer.stemToken(unhyphenToken));
+				terms.add(mStemmer.stemToken(unhyphenToken));
 
 				// Split on hyphens and add to terms list
 				String[] splitTokens = strToken.split("-");
 				for (String splitToken : splitTokens) {
-					// terms.add(splitToken);
-					terms.add(sanitizer.stemToken(splitToken));
+					terms.add(mStemmer.stemToken(splitToken));
 				}
 			} else {
-				// terms.add(strToken);
-				terms.add(sanitizer.stemToken(strToken));
+				terms.add(mStemmer.stemToken(strToken));
 			}
 		}
 
 		return terms;
+	}
+
+	public String normalizeAndStemToken(String token) {
+		return mStemmer.stemToken(normalizeToken(token));
 	}
 
 	public String normalizeToken(String token) {
@@ -57,23 +47,26 @@ public class DefaultTokenProcessor implements TokenProcessor {
 		StringBuilder tokenSB = new StringBuilder(token.replaceAll("[\'\"]", "").toLowerCase());
 		int len = tokenSB.length();
 
-		// Remove non-alphanumeric character from start
-		if (len > 0 && tokenSB.substring(0, 1).matches("\\W")) {
-			tokenSB.deleteCharAt(0);
-			len = tokenSB.length();
+		// Remove non-alphanumeric characters from beginning of token
+		for (int i = 0; len > 0 && i < len; i++) {
+			if (!Character.isLetterOrDigit(tokenSB.charAt(i))) {
+				tokenSB.deleteCharAt(i);
+				len = tokenSB.length();
+			} else {
+				break;
+			}
 		}
 
-		// Remove non-alphanumeric character from end
-		if (len > 0 && tokenSB.substring(len - 1, len).matches("\\W")) {
-			tokenSB.deleteCharAt(len - 1);
+		// Remove non-alphanumeric characters from end of token
+		for (int j = len - 1; len > 0 && j >= 0; j--) {
+			if (!Character.isLetterOrDigit(tokenSB.charAt(j))) {
+				tokenSB.deleteCharAt(j);
+				len = tokenSB.length();
+			} else {
+				break;
+			}
 		}
 
 		return tokenSB.toString();
 	}
-
-	// public String stemToken(String token) {
-	// 	mStemmer.setCurrent(token);
-	// 	mStemmer.stem();
-	// 	return mStemmer.getCurrent();
-	// }
 }

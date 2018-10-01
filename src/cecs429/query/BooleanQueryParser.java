@@ -42,9 +42,6 @@ public class BooleanQueryParser {
 	 * Given a boolean query, parses and returns a tree of QueryComponents representing the query.
 	 */
 	public QueryComponent parseQuery(String query) {
-
-		query = Sanitizer.getInstance().sanitize(query);
-
 		int start = 0;
 		
 		// General routine: scan the query to identify a literal, and put that literal into a list.
@@ -147,7 +144,6 @@ public class BooleanQueryParser {
 	 * Locates and returns the next literal from the given subquery string.
 	 */
 	private Literal findNextLiteral(String subquery, int startIndex) {
-		TokenProcessor processor = new DefaultTokenProcessor();
 		int subLength = subquery.length();
 		int lengthOut;
 
@@ -163,9 +159,12 @@ public class BooleanQueryParser {
 			lengthOut = nextDoubleQuote - startIndex + 1;
 			// Add terms to array without the double quotes
 			terms.addAll(Arrays.asList(subquery.substring(startIndex + 1, nextDoubleQuote).split(" ")));
+
+			//System.out.println("Literal found: " + subquery.substring(startIndex + 1, nextDoubleQuote));
+
 			return new Literal(
 				new StringBounds(startIndex, lengthOut),
-				new PhraseLiteral(terms, processor)
+				new PhraseLiteral(terms)
 			);
 		} else {		
 			// Locate the next space to find the end of this literal.
@@ -177,11 +176,13 @@ public class BooleanQueryParser {
 			else {
 				lengthOut = nextSpace - startIndex;
 			}
+
+			//System.out.println("Literal found: " + subquery.substring(startIndex, startIndex + lengthOut));
 			
 			// This is a term literal containing a single term.
 			return new Literal(
 				new StringBounds(startIndex, lengthOut),
-				new TermLiteral(subquery.substring(startIndex, startIndex + lengthOut), processor)
+				new TermLiteral(subquery.substring(startIndex, startIndex + lengthOut))
 			);
 		}
 	}

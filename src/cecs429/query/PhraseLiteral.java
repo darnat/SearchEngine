@@ -2,8 +2,10 @@ package cecs429.query;
 
 import cecs429.index.Index;
 import cecs429.index.Posting;
+import cecs429.text.DefaultTokenProcessor;
 import cecs429.text.TokenProcessor;
 
+import java.lang.Math;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,35 +16,34 @@ import java.util.List;
 public class PhraseLiteral implements QueryComponent {
 	// The list of individual terms in the phrase.
 	private List<String> mTerms = new ArrayList<>();
-	private TokenProcessor mProcessor;
 	
 	/**
 	 * Constructs a PhraseLiteral with the given individual phrase terms.
 	 */
-	public PhraseLiteral(List<String> terms, TokenProcessor processor) {
+	public PhraseLiteral(List<String> terms) {
 		mTerms.addAll(terms);
-		mProcessor = processor;
 	}
 	
 	/**
 	 * Constructs a PhraseLiteral given a string with one or more individual terms separated by spaces.
 	 */
-	public PhraseLiteral(String terms, TokenProcessor processor) {
+	public PhraseLiteral(String terms) {
 		mTerms.addAll(Arrays.asList(terms.split(" ")));
-		mProcessor = processor;
 	}
 	
 	@Override
-	public List<Posting> getPostings(Index index) {
+	public List<Posting> getPostings(Index index, TokenProcessor processor) {
 		List<Posting> result = new ArrayList<Posting>();
 		if (mTerms.size() > 0) {
-			result = index.getPostings(mTerms.get(0));
+			result = index.getPostings(((DefaultTokenProcessor) processor).normalizeAndStemToken(mTerms.get(0)));
 		}
 		if (mTerms.size() == 1) {
 			return result;
 		}
 		for (int i = 1; i < mTerms.size(); ++i) {
-			result = getNextPostings(result, index.getPostings(mTerms.get(i)));
+			// FIXME: References being sent
+			result = getNextPostings(result, index.getPostings(((DefaultTokenProcessor) processor).normalizeAndStemToken(mTerms.get(i)))
+			);
 		}
 		return result;
 
@@ -70,19 +71,28 @@ public class PhraseLiteral implements QueryComponent {
 	}
 
 	private Boolean areNearFrom(List<Integer> positions1, List<Integer> positions2, int k) {
+		// Sanity Check
+		System.out.print("positions1: [ ");
+		for (Integer i : positions1) {
+			System.out.print(i + " ");
+		}
+		System.out.println("]");
+		System.out.print("positions2: [ ");
+		for (Integer i : positions2) {
+			System.out.print(i + " ");
+		}
+		System.out.println("]");
+		// End
+
 		for (int i = 0; i < positions1.size(); ++i) {
 			for (int j = i; j < positions2.size(); ++j) {
-				if (positions2.get(j) < positions1.get(i)) {
-					continue;
-				}
-				if ((positions2.get(j) - positions1.get(i)) == k) {
+				if (Math.abs(positions2.get(j) - positions1.get(i)) == k) {
 					return true;
 				}
 			}
 		}
 		return false;
 	}
-
 	
 	@Override
 	public String toString() {

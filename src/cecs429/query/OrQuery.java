@@ -2,8 +2,9 @@ package cecs429.query;
 
 import cecs429.index.Index;
 import cecs429.index.Posting;
-import java.util.ArrayList;
+import cecs429.text.TokenProcessor;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,20 +18,19 @@ public class OrQuery implements QueryComponent {
 	public OrQuery(List<QueryComponent> components) {
 		mComponents = components;
 	}
-        
-	// TODO: program the merge for an OrQuery, by gathering the postings of the composed QueryComponents and
-	// unioning the resulting postings.
+    
 	@Override
-	public List<Posting> getPostings(Index index) {
+	public List<Posting> getPostings(Index index, TokenProcessor processor) {
             List<Posting> result = new ArrayList<>();
             Boolean init = true;
 
             for (QueryComponent qc : mComponents) {
                 if (init) { //initalize result
-                    result = qc.getPostings(index);
+                    result = qc.getPostings(index, processor);
                     init = false;
                 } else {
-                    result = union(result, qc.getPostings(index));
+                    // FIXME: References being sent
+                    result = union(result, qc.getPostings(index, processor));
                 }
             }
 		
