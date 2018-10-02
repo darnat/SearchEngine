@@ -3,6 +3,7 @@ package edu.csulb;
 import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
 import cecs429.documents.DocumentCorpus;
+import cecs429.documents.Snippet;
 import cecs429.index.Index;
 import cecs429.index.PositionalInvertedIndex;
 import cecs429.index.Posting;
@@ -10,9 +11,11 @@ import cecs429.query.BooleanQueryParser;
 import cecs429.query.QueryComponent;
 import cecs429.text.DefaultTokenProcessor;
 import cecs429.text.EnglishTokenStream;
+import cecs429.text.Stemmer;
 import cecs429.text.TokenProcessor;
-import cecs429.text.Sanitizer;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -23,7 +26,7 @@ public class PositionalInvertedIndexer {
 
 		System.out.print("Please enter the name of a directory you would like to index: ");
 		DocumentCorpus corpus = DirectoryCorpus.loadJsonDirectory(Paths.get(sc.nextLine()).toAbsolutePath(), ".json");		
-		DefaultTokenProcessor processor = new DefaultTokenProcessor();
+		TokenProcessor processor = new DefaultTokenProcessor();
 		BooleanQueryParser queryParser = new BooleanQueryParser();
 
 		System.out.println("\nIndexing in progress...");
@@ -44,7 +47,7 @@ public class PositionalInvertedIndexer {
 			if (query.equals(":q")) {
 				break;
 			} else if (query.startsWith(":stem")) {
-				System.out.println("Stemmed token: " + Sanitizer.getInstance().stemToken(query.split(" ")[1]));
+				System.out.println("Stemmed token: " + Stemmer.getInstance().stemToken(query.split(" ")[1]));
 			} else if (query.startsWith(":index")) {
 				corpus = DirectoryCorpus.loadJsonDirectory(Paths.get(query.split(" ")[1]).toAbsolutePath(), ".json");
 				System.out.println("Indexing in progress...");
@@ -63,14 +66,40 @@ public class PositionalInvertedIndexer {
 				QueryComponent qc = queryParser.parseQuery(query);
 
 				if (qc != null) {
-					List<Posting> postings = qc.getPostings(index);
+					List<Posting> postings = qc.getPostings(index, processor);
 
 					if (!postings.isEmpty()) {
-						for (Posting p : postings) {
-							System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
+						for (int i = 0; i < postings.size(); i++) {
+							System.out.println(i + ": " + corpus.getDocument(postings.get(i).getDocumentId()).getTitle());
 						}
 						System.out.println("Number of documents: " + postings.size());
-						// TODO: Ask user if he wishes to view a document 
+						System.out.print("\n\nDo you wish to select a document to view? (y, n) ");
+						String docRequested = sc.nextLine();
+						if (docRequested.toLowerCase().equals("y")) {
+							System.out.print("Please enter a list number from the list above: ");
+							int listNum = sc.nextInt();
+							int docId = postings.get(listNum).getDocumentId();
+							BufferedReader in = new BufferedReader(corpus.getDocument(docId).getContent());
+							String line = null;
+							// Print entire document content
+							// TODO: Remove after Snippet is fully working
+							try {
+								while ((line = in.readLine()) != null) {
+									System.out.println(line);
+								}
+							} catch(IOException ex) {
+								System.out.println("Error reading document.");
+							}
+							// Flush the buffer
+							sc.nextLine();
+
+							// Print snippet
+							Snippet snip = new Snippet(
+								corpus.getDocument(docId).getContent(),
+								postings.get(listNum).getPositions()
+							);
+							System.out.println("\n\nSnippet: " + snip.getContent());
+						}
 					} else {
 						System.out.println("Term was not found.");
 					}
