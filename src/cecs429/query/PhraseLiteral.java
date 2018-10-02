@@ -42,8 +42,7 @@ public class PhraseLiteral implements QueryComponent {
 		}
 		for (int i = 1; i < mTerms.size(); ++i) {
 			// FIXME: References being sent
-			result = getNextPostings(result, index.getPostings(((DefaultTokenProcessor) processor).normalizeAndStemToken(mTerms.get(i)))
-			);
+			result = getNextPostings(result, index.getPostings(((DefaultTokenProcessor) processor).normalizeAndStemToken(mTerms.get(i))));
 		}
 		return result;
 
@@ -53,45 +52,61 @@ public class PhraseLiteral implements QueryComponent {
 
 	private List<Posting> getNextPostings(List<Posting> postings1, List<Posting> postings2) {
 		List<Posting> result = new ArrayList<Posting>();
+		List<List<Integer>> tmp;
 
 		for (int itr1 = 0, itr2 = 0; itr1 < postings1.size() && itr2 < postings2.size();) {
-			if (postings1.get(itr1).getDocumentId() == postings2.get(itr2).getDocumentId()
-				&& areNearFrom(postings1.get(itr1).getPositions(), postings2.get(itr2).getPositions(), 1)) {
-					result.add(postings2.get(itr2));
-					++itr1;
-					++itr2;
-			} else if (postings1.get(itr1).getDocumentId() < postings2.get(itr2).getDocumentId()) {
-				++itr1;
-			} else {
-				++itr2;
+			if (postings1.get(itr1).getDocumentId() == postings2.get(itr2).getDocumentId()) {
+
+
+				tmp = areNearFrom()
+
 			}
+			// if (postings1.get(itr1).getDocumentId() == postings2.get(itr2).getDocumentId()
+			// 	&& areNearFrom(postings1.get(itr1).getPositions(), postings2.get(itr2).getPositions(), 1)) {
+
+			// 		result.add(postings2.get(itr2));
+			// 		++itr1;
+			// 		++itr2;
+			// } else if (postings1.get(itr1).getDocumentId() < postings2.get(itr2).getDocumentId()) {
+			// 	++itr1;
+			// } else {
+			// 	++itr2;
+			// }
 		}
 
 		return result;
 	}
 
-	private Boolean areNearFrom(List<Integer> positions1, List<Integer> positions2, int k) {
-		// Sanity Check
-		System.out.print("positions1: [ ");
-		for (Integer i : positions1) {
-			System.out.print(i + " ");
+	private List<List<Integer>> transformToLists(List<Integer> positions) {
+		List<List<Integer>>		positions = ArrayList<List<Integer>>();
+		List<Integer>			tmp;
+
+		for (Integer i : positions) {
+			tmp = new ArrayList<Integer>();
+			tmp.add(i);
+			positions.add(tmp);
 		}
-		System.out.println("]");
-		System.out.print("positions2: [ ");
-		for (Integer i : positions2) {
-			System.out.print(i + " ");
-		}
-		System.out.println("]");
-		// End
+		return tmp;
+	}
+
+	private List<List<Integer>> areNearFrom(List<Integer> positions1, List<Integer> positions2, int k) {
+		List<List<Integer>>		positions = ArrayList<List<Integer>>();
+		List<Integer>			tmp;
+
+
+
 
 		for (int i = 0; i < positions1.size(); ++i) {
 			for (int j = i; j < positions2.size(); ++j) {
-				if (Math.abs(positions2.get(j) - positions1.get(i)) == k) {
-					return true;
+				if ((positions2.get(j) - positions1.get(i)) == k) {
+					tmp = new ArrayList<Integer>();
+					tmp.add(positions1.get(i));
+					tmp.add(positions2.get(j));
+					positions.add(tmp);
 				}
 			}
 		}
-		return false;
+		return positions;
 	}
 	
 	@Override
