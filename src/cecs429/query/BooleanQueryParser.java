@@ -1,6 +1,7 @@
 package cecs429.query;
 
 import cecs429.text.*;
+import cecs429.query.*;
 
 import java.lang.*;
 import java.util.ArrayList;
@@ -9,9 +10,12 @@ import java.util.List;
 
 /**
  * Parses boolean queries according to the base requirements of the CECS 429 project.
- * Does not handle phrase queries, NOT queries, NEAR queries, or wildcard queries... yet.
+ * Does not handle NOT queries, NEAR queries, or wildcard queries... yet.
  */
 public class BooleanQueryParser {
+	/* Sanitizer */
+	private Sanitizer mSanitizer;
+
 	/**
 	 * Identifies a portion of a string with a starting index and a length.
 	 */
@@ -37,13 +41,17 @@ public class BooleanQueryParser {
 			this.literalComponent = literalComponent;
 		}
 	}
-	
+
+	public BooleanQueryParser() {
+		mSanitizer = Sanitizer.getInstance();
+	}
+
 	/**
 	 * Given a boolean query, parses and returns a tree of QueryComponents representing the query.
 	 */
 	public QueryComponent parseQuery(String query) {
 
-		query = Sanitizer.getInstance().sanitize(query);
+		query = mSanitizer.sanitize(query);
 
 		int start = 0;
 		
