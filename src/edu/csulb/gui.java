@@ -28,6 +28,7 @@ import javax.swing.JTextField;
 import javax.swing.JScrollPane;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -44,11 +45,19 @@ import javax.swing.border.EtchedBorder;
 import java.awt.Font;
 import javax.swing.SwingConstants;
 import javax.swing.Box;
+import javax.swing.DefaultListModel;
+import javax.swing.JPanel;
+import javax.swing.JToggleButton;
+import javax.swing.JList;
+import javax.swing.ListSelectionModel;
+import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 
 public class gui {
 
 	private JFrame frame;
 	private JTextField queryInput;
+	private static JList outputList = new JList();
 	
 	DocumentCorpus corpus;
 	Index index;
@@ -103,7 +112,7 @@ public class gui {
 	private void initialize() {
 		frame = new JFrame();
 		frame.setResizable(false);
-		frame.setBounds(100, 100, 872, 512);
+		frame.setBounds(100, 100, 916, 559);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		JFileChooser fileChooser = new JFileChooser();
@@ -122,40 +131,71 @@ public class gui {
 		scrollPane.setViewportBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
 		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		
+		scrollPane.setViewportView(outputList);
+		
+		JLabel scrollPaneTitle = new JLabel("");
+		scrollPaneTitle.setFont(new Font("Lucida Grande", Font.PLAIN, 20));
+		scrollPaneTitle.setHorizontalAlignment(SwingConstants.CENTER);
+		scrollPane.setColumnHeaderView(scrollPaneTitle);
+		
+		JTextPane documentSnippetOutput = new JTextPane();
+		
 		JButton searchButton = new JButton("Search");
 		searchButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				String query = queryInput.getText();
 				if (query.equals(":q")) {
-					// need to close application
+					frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
 				} else if (query.startsWith(":stem")) {
-					System.out.println("Stemmed token: " + Stemmer.getInstance().stemToken(query.split(" ")[1]));
-//				} else if (query.startsWith(":index")) {
-//					corpus = DirectoryCorpus.loadJsonDirectory(Paths.get(query.split(" ")[1]).toAbsolutePath(), ".json");
-//					System.out.println("Indexing in progress...");
-//					start = System.currentTimeMillis();
-//					index = indexCorpus(corpus, processor);
-//					end = System.currentTimeMillis();
-//					System.out.println("Indexing completed in " + ((end - start) / 1000) + " seconds.");
-//				} else if (query.startsWith(":vocab")) {
+					scrollPaneTitle.setText("Stem: " + Stemmer.getInstance().stemToken(query.split(" ")[1]));
 				} else if (query.startsWith(":vocab")) {
+					scrollPaneTitle.setText("Vocabulary");
 					List<String> vocabulary = index.getVocabulary();
-					System.out.println("Printing first 1000 terms in vocabulary of corpus.");
+					
+					DefaultListModel<String> listModel = new DefaultListModel<String>();
+					
 					for (int i = 0; i < 1000 && i < vocabulary.size(); i++) {
-						System.out.println(i + ": " + vocabulary.get(i));
+						listModel.addElement(vocabulary.get(i));
 					}
-					System.out.println("Total number of vocabulary terms: " + vocabulary.size());
+					
+					outputList = new JList<String>(listModel);
+					outputList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+					scrollPane.setViewportView(outputList);
 				} else {
+					scrollPaneTitle.setText("Query");
 					QueryComponent qc = queryParser.parseQuery(query);
 
 					if (qc != null) {
 						List<Posting> postings = qc.getPostings(index, processor);
-
+						
 						if (!postings.isEmpty()) {
+							DefaultListModel<String> listModel = new DefaultListModel<String>();
+								
 							for (int i = 0; i < postings.size(); i++) {
-								System.out.println(i + ": " + corpus.getDocument(postings.get(i).getDocumentId()).getTitle());
+								listModel.addElement(corpus.getDocument(postings.get(i).getDocumentId()).getTitle());
 							}
-							System.out.println("Number of documents: " + postings.size());
+							
+							outputList = new JList<String>(listModel);
+							outputList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+							outputList.addMouseListener(new MouseAdapter() {
+							    public void mouseClicked(MouseEvent evt) {
+							        JList list = (JList)evt.getSource();
+							        if (evt.getClickCount() == 2) {
+
+							            // Double-click detected
+							            int index = list.locationToIndex(evt.getPoint());
+										// Print snippet
+										Snippet snip = new Snippet(
+											corpus.getDocument(postings.get(index).getDocumentId()).getContent(),
+											postings.get(index).getPositions()
+										);
+										
+										documentSnippetOutput.setText(snip.getContent());
+							        }
+							    }
+							});
+							scrollPane.setViewportView(outputList);
+//							System.out.println("Number of documents: " + postings.size());
 //							System.out.print("\n\nDo you wish to select a document to view? (y, n) ");
 //							String docRequested = sc.nextLine();
 //							if (docRequested.toLowerCase().equals("y")) {
@@ -197,6 +237,14 @@ public class gui {
 		selectCorpusBtn.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
+				if(searchButton.isEnabled()) {
+					searchButton.setEnabled(false);
+				}
+				
+				if(queryInput.isEditable()) {
+					queryInput.setEditable(false);
+				}
+				
 				int result = fileChooser.showDialog(new JFrame("Select corpus"), "Select");
 				if(result == JFileChooser.APPROVE_OPTION) {
 					directoryLabel.setText(fileChooser.getSelectedFile().getAbsolutePath());
@@ -243,7 +291,6 @@ public class gui {
 		JLabel lblsteamStem = new JLabel(":steam <query> = stem word");
 		
 		JLabel lblvocabFirst = new JLabel(":vocab = first 1000 terms");
-
 		
 		GroupLayout groupLayout = new GroupLayout(frame.getContentPane());
 		groupLayout.setHorizontalGroup(
@@ -251,26 +298,31 @@ public class gui {
 				.addGroup(groupLayout.createSequentialGroup()
 					.addGap(68)
 					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-						.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING, false)
-							.addGroup(Alignment.LEADING, groupLayout.createSequentialGroup()
+						.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
+							.addGroup(groupLayout.createSequentialGroup()
 								.addComponent(lblQuery)
 								.addPreferredGap(ComponentPlacement.RELATED)
 								.addComponent(queryInput, GroupLayout.PREFERRED_SIZE, 464, GroupLayout.PREFERRED_SIZE)
 								.addPreferredGap(ComponentPlacement.RELATED)
 								.addComponent(searchButton, GroupLayout.PREFERRED_SIZE, 124, GroupLayout.PREFERRED_SIZE))
-							.addGroup(Alignment.LEADING, groupLayout.createSequentialGroup()
+							.addGroup(groupLayout.createSequentialGroup()
 								.addComponent(selectCorpusBtn, GroupLayout.PREFERRED_SIZE, 150, GroupLayout.PREFERRED_SIZE)
 								.addPreferredGap(ComponentPlacement.UNRELATED)
 								.addComponent(directoryLabel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 								.addPreferredGap(ComponentPlacement.UNRELATED)
 								.addComponent(indexIndicator)))
-						.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 628, GroupLayout.PREFERRED_SIZE))
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-						.addComponent(lblvocabFirst)
-						.addComponent(lblqQuit)
-						.addComponent(lblsteamStem))
-					.addContainerGap(16, Short.MAX_VALUE))
+						.addGroup(groupLayout.createSequentialGroup()
+							.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING, false)
+								.addGroup(Alignment.LEADING, groupLayout.createSequentialGroup()
+									.addComponent(lblqQuit)
+									.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+									.addComponent(lblsteamStem)
+									.addGap(73)
+									.addComponent(lblvocabFirst))
+								.addComponent(scrollPane, Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 628, GroupLayout.PREFERRED_SIZE))
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(documentSnippetOutput, GroupLayout.DEFAULT_SIZE, 208, Short.MAX_VALUE)))
+					.addContainerGap())
 		);
 		groupLayout.setVerticalGroup(
 			groupLayout.createParallelGroup(Alignment.LEADING)
@@ -281,27 +333,22 @@ public class gui {
 						.addComponent(directoryLabel, GroupLayout.PREFERRED_SIZE, 19, GroupLayout.PREFERRED_SIZE)
 						.addComponent(indexIndicator))
 					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-						.addGroup(groupLayout.createSequentialGroup()
-							.addComponent(lblqQuit)
-							.addPreferredGap(ComponentPlacement.UNRELATED)
-							.addComponent(lblsteamStem)
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(lblvocabFirst))
-						.addGroup(groupLayout.createSequentialGroup()
-							.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-								.addComponent(queryInput, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-								.addComponent(lblQuery)
-								.addComponent(searchButton))
-							.addPreferredGap(ComponentPlacement.UNRELATED)
-							.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 393, Short.MAX_VALUE)))
-					.addContainerGap())
+					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+						.addComponent(queryInput, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+						.addComponent(lblQuery)
+						.addComponent(searchButton))
+					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
+						.addComponent(documentSnippetOutput)
+						.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 398, Short.MAX_VALUE))
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+						.addComponent(lblqQuit)
+						.addComponent(lblvocabFirst)
+						.addComponent(lblsteamStem))
+					.addContainerGap(24, Short.MAX_VALUE))
 		);
 		
-		JLabel scrollPaneTitle = new JLabel("");
-		scrollPaneTitle.setHorizontalAlignment(SwingConstants.CENTER);
-		scrollPaneTitle.setFont(new Font("Tahoma", Font.PLAIN, 24));
-		scrollPane.setColumnHeaderView(scrollPaneTitle);
 		frame.getContentPane().setLayout(groupLayout);
 	}
 }
