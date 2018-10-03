@@ -2,9 +2,9 @@ package cecs429.query;
 
 import cecs429.index.Index;
 import cecs429.index.Posting;
+import cecs429.query.Result.UnionMerge;
 import cecs429.text.TokenProcessor;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,66 +21,18 @@ public class OrQuery implements QueryComponent {
     
 	@Override
 	public List<Posting> getPostings(Index index, TokenProcessor processor) {
-            List<Posting> result = new ArrayList<>();
-            Boolean init = true;
+            //intialize with the reulsts from the first postings
+            Result results = new Result(mComponents.get(0).getPostings(index, processor));
 
-            for (QueryComponent qc : mComponents) {
-                if (init) { //initalize result
-                    result = qc.getPostings(index, processor);
-                    init = false;
-                } else {
-                    // FIXME: References being sent
-                    result = union(result, qc.getPostings(index, processor));
-                }
+            for (int i = 1; i < mComponents.size(); ++i) {
+                results.util = results.new UnionMerge();
+                
+                //union with prev results
+                results.util.mergeWith(mComponents.get(i).getPostings(index, processor));
             }
-		
-            return result;
+
+            return results.getmResults();
 	}
-	
-    private List<Posting> union(List<Posting> list1, List<Posting> list2) {
-        //printList(list1);
-        //printList(list2);
-        
-        List<Posting> result = new ArrayList<>();
-        int i = 0, j = 0;
-        
-        //while both lists are inbounds
-        while (i < list1.size() == j < list2.size()) {
-            if (list1.get(i).getDocumentId() == list2.get(j).getDocumentId()) {
-                result.add(list1.get(i));
-                ++i;
-                ++j;
-            }
-            else if (list1.get(i).getDocumentId() < list2.get(j).getDocumentId()) {
-                result.add(list1.get(i));
-                ++i;
-            }
-            else if (list2.get(j).getDocumentId() < list1.get(i).getDocumentId()) {
-                result.add(list2.get(j));
-                ++j;
-            }
-        }
-        
-        //Add the rest of either list if lists are not the same size
-        if (list1.size() != list2.size()) {
-            if (j == list2.size()) {
-                //add the rest of list1
-                for(; i < list1.size(); ++i) {
-                    result.add(list1.get(i));
-                }
-            } else if (i == list1.size()) {
-                //add the rest of list2
-                for(; j < list2.size(); ++j) {
-                    result.add(list2.get(j));
-                }
-            }
-        }
-        
-        //System.out.print("Result: ");
-        //printList(result);
-
-        return result;
-    }
     
     //Print list of doc ids (for debugging)
     private void printList(List<Posting> list) {
@@ -91,11 +43,11 @@ public class OrQuery implements QueryComponent {
         System.out.println("]");
     }
       
-	@Override
-	public String toString() {
-            // Returns a string of the form "[SUBQUERY] + [SUBQUERY] + [SUBQUERY]"
-            return "(" +
-             String.join(" + ", mComponents.stream().map(c -> c.toString()).collect(Collectors.toList()))
-             + " )";
-	}
+    @Override
+    public String toString() {
+        // Returns a string of the form "[SUBQUERY] + [SUBQUERY] + [SUBQUERY]"
+        return "(" +
+         String.join(" + ", mComponents.stream().map(c -> c.toString()).collect(Collectors.toList()))
+         + " )";
+    }
 }
