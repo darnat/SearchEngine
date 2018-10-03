@@ -179,15 +179,23 @@ public class BooleanQueryParser {
 				new StringBounds(startIndex, lengthOut),
 				new NearLiteral(terms)
 			);
+		} else if (subquery.substring(startIndex).startsWith("-")) {
+			// Extract next literal
+			Literal lit = findNextLiteral(subquery, startIndex + 1);
+			System.out.println("NOT query found: " + subquery.substring(startIndex, lit.bounds.start + lit.bounds.length));
+			return new Literal(
+				new StringBounds(startIndex, lit.bounds.start + lit.bounds.length),
+				new NotQuery(lit.literalComponent)
+			);
 		} else {		
 			// Locate the next space to find the end of this literal.
 			int nextSpace = subquery.indexOf(' ', startIndex);
 			
 			if (nextSpace < 0) {
-					// No more literals in this subquery.
-					lengthOut = subLength - startIndex;
+				// No more literals in this subquery.
+				lengthOut = subLength - startIndex;
 			} else {
-					lengthOut = nextSpace - startIndex;
+				lengthOut = nextSpace - startIndex;
 			}
 
 			//System.out.println("Literal found: " + subquery.substring(startIndex, startIndex + lengthOut));                 
@@ -195,15 +203,15 @@ public class BooleanQueryParser {
 			// if * is present, then the literal is a wildcard
 			if (subquery.substring(startIndex, startIndex + lengthOut).contains("*")) {
 				return new Literal(
-						new StringBounds(startIndex, lengthOut),
-						new WildCardLiteral(subquery.substring(startIndex, startIndex + lengthOut))
+					new StringBounds(startIndex, lengthOut),
+					new WildCardLiteral(subquery.substring(startIndex, startIndex + lengthOut))
 				);
 			} else {
 				System.out.println("Term Literal found: " + subquery.substring(startIndex, startIndex + lengthOut));
 				// This is a term literal containing a single term.
 				return new Literal(
-						new StringBounds(startIndex, lengthOut),
-						new TermLiteral(subquery.substring(startIndex, startIndex + lengthOut))
+					new StringBounds(startIndex, lengthOut),
+					new TermLiteral(subquery.substring(startIndex, startIndex + lengthOut))
 				);
 			}
 		}
