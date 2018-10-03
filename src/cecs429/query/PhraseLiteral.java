@@ -93,6 +93,7 @@ public class PhraseLiteral implements QueryComponent {
 		Map.Entry<Integer, List<List<Integer>>> entry;
 		Integer docID;
 		Posting posting;
+		Boolean added;
 		List<List<Integer>> tmp;
 		
 		Iterator<Map.Entry<Integer, List<List<Integer>>>> itr = current.entrySet().iterator();
@@ -102,12 +103,17 @@ public class PhraseLiteral implements QueryComponent {
 			tmp = entry.getValue();
 			if (tmp.size() == 0) { continue; }
 			posting = new Posting(docID);
+			added = false;
 			for (List<Integer> positions: tmp) {
+				if (positions.size() < mTerms.size()) { continue; }
+				added = true;
 				for (Integer pos: positions) {
 					posting.addPosition(pos);
 				}
 			}
-			result.add(posting);
+			if (added) {
+				result.add(posting);
+			}
 		}
 
 		return result;
