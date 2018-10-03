@@ -57,6 +57,7 @@ public class gui {
 
 	private JFrame frame;
 	private JTextField queryInput;
+	@SuppressWarnings("rawtypes")
 	private static JList outputList = new JList();
 	
 	DocumentCorpus corpus;
@@ -110,57 +111,80 @@ public class gui {
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
+		// Create Frame for GUI to reside
 		frame = new JFrame();
 		frame.setResizable(false);
 		frame.setBounds(100, 100, 916, 559);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
+		// Initialize FileChooser
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		
+		// Initialize Labels for UI
 		JLabel directoryLabel = new JLabel("Nothing Selected.");
 		JLabel indexIndicator = new JLabel("Index Empty.");
+		JLabel lblQuery = new JLabel("Query");
+		JLabel scrollPaneTitle = new JLabel("");
+		JLabel lblqQuit = new JLabel(":q = quit application");
+		JLabel lblsteamStem = new JLabel(":steam <query> = stem word");
+		JLabel lblvocabFirst = new JLabel(":vocab = first 1000 terms");
 		
+		// Initialize snippet output area
+		JTextPane documentSnippetOutput = new JTextPane();
+		documentSnippetOutput.setEditable(false);
+		
+		// Set input text field properties
 		queryInput = new JTextField();
 		queryInput.setEditable(false);
 		queryInput.setColumns(10);
 		
-		JLabel lblQuery = new JLabel("Query");
-		
+		// Initialize ScrollPane for outputs
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setViewportBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
 		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		
 		scrollPane.setViewportView(outputList);
 		
-		JLabel scrollPaneTitle = new JLabel("");
+
 		scrollPaneTitle.setFont(new Font("Lucida Grande", Font.PLAIN, 20));
 		scrollPaneTitle.setHorizontalAlignment(SwingConstants.CENTER);
 		scrollPane.setColumnHeaderView(scrollPaneTitle);
 		
-		JTextPane documentSnippetOutput = new JTextPane();
-		
+
+		// Create Search Button
 		JButton searchButton = new JButton("Search");
+		// Add listener on Search Button Click
 		searchButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				String query = queryInput.getText();
+				documentSnippetOutput.setText("");
+				// Quit Command :Q
 				if (query.equals(":q")) {
 					frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+				
+				// Stem Command :stem <Query>
 				} else if (query.startsWith(":stem")) {
 					scrollPaneTitle.setText("Stem: " + Stemmer.getInstance().stemToken(query.split(" ")[1]));
+				
+				// Vocab Command :vocab
 				} else if (query.startsWith(":vocab")) {
 					scrollPaneTitle.setText("Vocabulary");
 					List<String> vocabulary = index.getVocabulary();
 					
+					// Create list for vocabs to reside in UI
 					DefaultListModel<String> listModel = new DefaultListModel<String>();
 					
+					// Iterate through vocabulary and add to list
 					for (int i = 0; i < 1000 && i < vocabulary.size(); i++) {
 						listModel.addElement(vocabulary.get(i));
 					}
 					
+					// Add list to ui scrollpane
 					outputList = new JList<String>(listModel);
 					outputList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 					scrollPane.setViewportView(outputList);
+				// Query Command <Query>
 				} else {
 					scrollPaneTitle.setText("Query");
 					QueryComponent qc = queryParser.parseQuery(query);
@@ -169,14 +193,20 @@ public class gui {
 						List<Posting> postings = qc.getPostings(index, processor);
 						
 						if (!postings.isEmpty()) {
+							scrollPaneTitle.setText(scrollPaneTitle.getText() + ": " + postings.size() + " results.");
+							// Create list for query results to reside in UI
 							DefaultListModel<String> listModel = new DefaultListModel<String>();
 								
+							// Iterate through and add to list
 							for (int i = 0; i < postings.size(); i++) {
 								listModel.addElement(corpus.getDocument(postings.get(i).getDocumentId()).getTitle());
 							}
 							
+							// Initialize UI component for outputs
 							outputList = new JList<String>(listModel);
 							outputList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+							
+							// Add double click listener to get snippet of document
 							outputList.addMouseListener(new MouseAdapter() {
 							    public void mouseClicked(MouseEvent evt) {
 							        JList list = (JList)evt.getSource();
@@ -195,36 +225,13 @@ public class gui {
 							    }
 							});
 							scrollPane.setViewportView(outputList);
-//							System.out.println("Number of documents: " + postings.size());
-//							System.out.print("\n\nDo you wish to select a document to view? (y, n) ");
-//							String docRequested = sc.nextLine();
-//							if (docRequested.toLowerCase().equals("y")) {
-//								System.out.print("Please enter a list number from the list above: ");
-//								int listNum = sc.nextInt();
-//								int docId = postings.get(listNum).getDocumentId();
-//								BufferedReader in = new BufferedReader(corpus.getDocument(docId).getContent());
-//								String line = null;
-//								// Print entire document content
-//								// TODO: Remove after Snippet is fully working
-//								try {
-//									while ((line = in.readLine()) != null) {
-//										System.out.println(line);
-//									}
-//								} catch(IOException ex) {
-//									System.out.println("Error reading document.");
-//								}
-//								// Flush the buffer
-//								sc.nextLine();
-//
-//								// Print snippet
-//								Snippet snip = new Snippet(
-//									corpus.getDocument(docId).getContent(),
-//									postings.get(listNum).getPositions()
-//								);
-//								System.out.println("\n\nSnippet: " + snip.getContent());
-//							}
 						} else {
-							System.out.println("Term was not found.");
+							DefaultListModel<String> listModel = new DefaultListModel<String>();
+							listModel.addElement("Term was not found.");
+							outputList = new JList<String>(listModel);
+							outputList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+							scrollPane.setViewportView(outputList);
+							documentSnippetOutput.setText("");
 						}
 					}
 				}
@@ -232,20 +239,26 @@ public class gui {
 		});
 		searchButton.setEnabled(false);
 		
+		// Create Select Corpus button to get directory of corpus
 		JButton selectCorpusBtn = new JButton("Select Corpus");
 		
+		// Add listener to when button is clicked
 		selectCorpusBtn.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
+				// Check to see if search button is enabled
 				if(searchButton.isEnabled()) {
 					searchButton.setEnabled(false);
 				}
 				
+				// Check to see if query input box is enabled
 				if(queryInput.isEditable()) {
 					queryInput.setEditable(false);
 				}
 				
+				// Open FileChooser UI to user
 				int result = fileChooser.showDialog(new JFrame("Select corpus"), "Select");
+				// Check if directory has been selected
 				if(result == JFileChooser.APPROVE_OPTION) {
 					directoryLabel.setText(fileChooser.getSelectedFile().getAbsolutePath());
 					indexIndicator.setText("Indexing in progress...");
@@ -259,18 +272,18 @@ public class gui {
 							index = indexCorpus(corpus, processor);
 							long end = System.currentTimeMillis();
 							indexIndicator.setText("Indexed: " + ((end - start) / 1000) + " seconds.");
+							// Check if search button was disabled, to enable it
 							if(!searchButton.isEnabled()) {
 								searchButton.setEnabled(true);
 							}
 							
+							// Check if query input box was disabled, to enable it.
 							if(!queryInput.isEditable()) {
 								queryInput.setEditable(true);
 							}
 						}
 					}.start();
-					
-					
-					
+				// Condition if cancel was clicked
 				} else if( result == JFileChooser.CANCEL_OPTION) {
 					index = null;
 					directoryLabel.setText("Nothing Selected");
@@ -286,12 +299,7 @@ public class gui {
 			}
 		});
 		
-		JLabel lblqQuit = new JLabel(":q = quit application");
-		
-		JLabel lblsteamStem = new JLabel(":steam <query> = stem word");
-		
-		JLabel lblvocabFirst = new JLabel(":vocab = first 1000 terms");
-		
+		// UI grouping. Auto-generated by WindowBuilder in Eclipse
 		GroupLayout groupLayout = new GroupLayout(frame.getContentPane());
 		groupLayout.setHorizontalGroup(
 			groupLayout.createParallelGroup(Alignment.LEADING)
