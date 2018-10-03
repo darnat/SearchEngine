@@ -56,8 +56,8 @@ public class PhraseLiteral implements QueryComponent {
 		for (int i = 1; i < mTerms.size(); ++i) {
 			results = getNextPostings(results, index.getPostings(((DefaultTokenProcessor) processor).normalizeAndStemToken(mTerms.get(i))));
 		}
-		
-		return transformToPostings(results);;
+
+		return transformToPostings(results);
 	}
 
 	private Map<Integer, List<List<Integer>>> getNextPostings(Map<Integer, List<List<Integer>>> current, List<Posting> postings) {
