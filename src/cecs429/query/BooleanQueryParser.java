@@ -1,6 +1,7 @@
 package cecs429.query;
 
 import cecs429.text.*;
+import cecs429.query.*;
 
 import java.lang.*;
 import java.util.ArrayList;
@@ -8,8 +9,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Parses boolean queries according to the base requirements of the CECS 429 project.
- * Does not handle phrase queries, NOT queries, NEAR queries, or wildcard queries... yet.
+ * Parses boolean queries according to the base requirements of the CECS 429
+ * project. Does not handle phrase queries, NOT queries, NEAR queries, or
+ * wildcard queries... yet.
  */
 public class BooleanQueryParser {
 	/**
@@ -81,8 +83,7 @@ public class BooleanQueryParser {
 			// its component can go straight into the list.
 			if (subqueryLiterals.size() == 1) {
 				allSubqueries.add(subqueryLiterals.get(0));
-			}
-			else {
+			} else {
 				// With more than one literal, we must wrap them in an AndQuery component.
 				allSubqueries.add(new AndQuery(subqueryLiterals));
 			}
@@ -93,11 +94,9 @@ public class BooleanQueryParser {
 		// that must be combined with an OrQuery.
 		if (allSubqueries.size() == 1) {
 			return allSubqueries.get(0);
-		}
-		else if (allSubqueries.size() > 1) {
+		} else if (allSubqueries.size() > 1) {
 			return new OrQuery(allSubqueries);
-		}
-		else {
+		} else {
 			return null;
 		}
 	}
@@ -122,8 +121,7 @@ public class BooleanQueryParser {
 			// If there is no other + sign, then this is the final subquery in the
 			// query string.
 			lengthOut = query.length() - startIndex;
-		}
-		else {
+		} else {
 			// If there is another + sign, then the length of this subquery goes up
 			// to the next + sign.
 		
