@@ -20,7 +20,7 @@ public class AndQuery implements QueryComponent {
 
     @Override
     public List<Posting> getPostings(Index index, TokenProcessor processor) {
-        List<Posting> result = new ArrayList<Posting>();
+        List<Posting> result = new ArrayList<>();
         Boolean init = true;
         
         for (QueryComponent qc : mComponents) {
@@ -45,7 +45,7 @@ public class AndQuery implements QueryComponent {
         //printList(list1);
         //printList(list2);
         
-        List<Posting> result = new ArrayList<Posting>();
+        List<Posting> result = new ArrayList<>();
         //Iterator<Posting> i, j, iTemp, jTemp;
 
         for(int itr = 0, jtr = 0; itr < list1.size() && jtr < list2.size(); ) {
@@ -54,9 +54,9 @@ public class AndQuery implements QueryComponent {
                 Posting posting1 = list1.get(itr);
                 Posting posting2 = list2.get(jtr);
 
-                for (Integer i : posting2.getPositions()) {
+                posting2.getPositions().forEach((i) -> {
                     posting1.addPosition(i);
-                }
+                });
 
                 result.add(posting1);
                 //System.out.print("Add " + list1.get(itr).getDocumentId() + "; ");
@@ -79,9 +79,9 @@ public class AndQuery implements QueryComponent {
     
     private void printList(List<Posting> list) {
         System.out.print("[");
-        for (Posting p : list) {
+        list.forEach((p) -> {
             System.out.print(p.getDocumentId() + ", ");
-        }
+        });
         System.out.println("]");
     }
 }

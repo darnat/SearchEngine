@@ -152,7 +152,7 @@ public class BooleanQueryParser {
 			++startIndex;
 		}
 
-		if (subquery.startsWith("\"")) {
+		if (subquery.substring(startIndex).startsWith("\"")) {
 			List<String> terms = new ArrayList<>();
 			// Find next double quote
 			int nextDoubleQuote = subquery.indexOf('"', startIndex + 1);
@@ -160,30 +160,52 @@ public class BooleanQueryParser {
 			// Add terms to array without the double quotes
 			terms.addAll(Arrays.asList(subquery.substring(startIndex + 1, nextDoubleQuote).split(" ")));
 
-			//System.out.println("Literal found: " + subquery.substring(startIndex + 1, nextDoubleQuote));
+			System.out.println("Phrase Literal found: " + subquery.substring(startIndex + 1, nextDoubleQuote));
 
 			return new Literal(
 				new StringBounds(startIndex, lengthOut),
 				new PhraseLiteral(terms)
 			);
+		} else if (subquery.substring(startIndex).startsWith("[")) {
+			List<String> terms = new ArrayList<>();
+			// Find closing bracket
+			int closingBracketIndex = subquery.indexOf(']', startIndex + 1);
+			lengthOut = closingBracketIndex - startIndex + 1;
+                        
+			// Add terms to array without the double quotes
+			terms.addAll(Arrays.asList(subquery.substring(startIndex + 1, closingBracketIndex).split(" ")));
+
+			return new Literal(
+				new StringBounds(startIndex, lengthOut),
+				new NearLiteral(terms)
+			);
 		} else {		
 			// Locate the next space to find the end of this literal.
 			int nextSpace = subquery.indexOf(' ', startIndex);
+			
 			if (nextSpace < 0) {
-				// No more literals in this subquery.
-				lengthOut = subLength - startIndex;
-			}
-			else {
-				lengthOut = nextSpace - startIndex;
+					// No more literals in this subquery.
+					lengthOut = subLength - startIndex;
+			} else {
+					lengthOut = nextSpace - startIndex;
 			}
 
-			//System.out.println("Literal found: " + subquery.substring(startIndex, startIndex + lengthOut));
-			
-			// This is a term literal containing a single term.
-			return new Literal(
-				new StringBounds(startIndex, lengthOut),
-				new TermLiteral(subquery.substring(startIndex, startIndex + lengthOut))
-			);
+			//System.out.println("Literal found: " + subquery.substring(startIndex, startIndex + lengthOut));                 
+                        
+			// if * is present, then the literal is a wildcard
+			if (subquery.substring(startIndex, startIndex + lengthOut).contains("*")) {
+				return new Literal(
+						new StringBounds(startIndex, lengthOut),
+						new WildCardLiteral(subquery.substring(startIndex, startIndex + lengthOut))
+				);
+			} else {
+				System.out.println("Term Literal found: " + subquery.substring(startIndex, startIndex + lengthOut));
+				// This is a term literal containing a single term.
+				return new Literal(
+						new StringBounds(startIndex, lengthOut),
+						new TermLiteral(subquery.substring(startIndex, startIndex + lengthOut))
+				);
+			}
 		}
 	}
 }
