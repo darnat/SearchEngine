@@ -2,7 +2,7 @@ package cecs429.query;
 
 import cecs429.index.Index;
 import cecs429.index.Posting;
-import cecs429.query.Result.UnionMerge;
+import cecs429.query.Merge.Union;
 import cecs429.text.TokenProcessor;
 
 import java.util.List;
@@ -21,25 +21,25 @@ public class OrQuery implements QueryComponent {
     }
     
     public OrQuery(QueryComponent cm1, QueryComponent cm2) {
-        mComponents = new ArrayList<QueryComponent>();
+        mComponents = new ArrayList<>();
         mComponents.add(cm1);
         mComponents.add(cm2);
     }
     
-	@Override
-	public List<Posting> getPostings(Index index, TokenProcessor processor) {
-            //intialize with the reulsts from the first postings
-            Result results = new Result(mComponents.get(0).getPostings(index, processor));
-
-            for (int i = 1; i < mComponents.size(); ++i) {
-                results.util = results.new UnionMerge();
-                
-                //union with prev results
-                results.util.mergeWith(mComponents.get(i).getPostings(index, processor));
-            }
-
-            return results.getmResults();
-	}
+    @Override
+    public List<Posting> getPostings(Index index, TokenProcessor processor) {
+        //initialize result with first postings
+        List<Posting> results = new ArrayList<>();
+        results.addAll(mComponents.get(0).getPostings(index, processor));
+        
+        //iterate thorugh all postings
+        for (int i = 1; i < mComponents.size(); ++i) {
+            //intersect with previous
+            results = new Union().merge(results, mComponents.get(i).getPostings(index, processor));
+        }
+        
+        return results;
+    }
     
     //Print list of doc ids (for debugging)
     private void printList(List<Posting> list) {

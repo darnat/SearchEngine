@@ -28,7 +28,7 @@ public class BooleanQueryParser {
 	public BooleanQueryParser() {
 		mLiteralRegex = "[^ \"\\(\\)\\+\\[\\]]+";
 		// mRegex = "([a-zA-Z0-9]+\\-?[a-zA-Z0-9]+)|(\")|(\\()|(\\))|(\\-)|(\\+)|(\\[)|(\\])|(NEAR\\/[0-9]+)";
-		mRegex = "(\")|(\\()|(\\))| (\\-)|(\\+)|(\\[)|(\\])|(NEAR\\/[0-9]+)|(" + mLiteralRegex + ")";
+		mRegex = "(\")|(\\()|(\\))| (\\-)|(\\+)|(\\[)|(\\])|(\\/[0-9]+)|(" + mLiteralRegex + ")";
 	}
 
 	// Check if regex if valid

@@ -2,8 +2,8 @@ package cecs429.query;
 
 import cecs429.index.Index;
 import cecs429.index.Posting;
+import cecs429.query.Merge.Not;
 import cecs429.text.TokenProcessor;
-import cecs429.query.Result.NotMerge;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -17,9 +17,9 @@ public class NotQuery implements QueryComponent {
 	private List<QueryComponent> mComponents;
 	
 	public NotQuery(QueryComponent cm1, QueryComponent cm2) {
-		mComponents = new ArrayList<QueryComponent>();
-        mComponents.add(cm1);
-        mComponents.add(cm2);
+            mComponents = new ArrayList<>();
+            mComponents.add(cm1);
+            mComponents.add(cm2);
 	}
 
 	@Override
@@ -29,21 +29,21 @@ public class NotQuery implements QueryComponent {
 
 	@Override
 	public List<Posting> getPostings(Index index, TokenProcessor processor) {
-		Result results = new Result(mComponents.get(0).getPostings(index, processor));
-
-        //iterate thorugh all postings
-        for (int i = 1; i < mComponents.size(); ++i) {
-            results.util = results.new NotMerge();
-
-            //intersect with previous
-            results.util.mergeWith(mComponents.get(i).getPostings(index, processor));
-        }            
+            //initialize result with first postings
+            List<Posting> results = new ArrayList<>();
+            results.addAll(mComponents.get(0).getPostings(index, processor));
         
-        return results.getmResults();
+            //iterate thorugh all postings
+            for (int i = 1; i < mComponents.size(); ++i) {
+                //intersect with previous
+                results = new Not().merge(results, mComponents.get(i).getPostings(index, processor));
+            }
+        
+            return results;
 	}
       
 	@Override
 	public String toString() {
-		return String.join(" ", mComponents.stream().map(c -> c.toString()).collect(Collectors.toList()));
+            return String.join(" ", mComponents.stream().map(c -> c.toString()).collect(Collectors.toList()));
 	}
 }
