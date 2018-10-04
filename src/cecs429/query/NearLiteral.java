@@ -8,10 +8,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 public class NearLiteral implements QueryComponent {
 
     // The list of individual terms in the phrase.
     private List<String> mTerms = new ArrayList<>();
+
+    // Regular expression match the near
+    private String mRegex = "^near/([0-9]+)$";
 
     public NearLiteral(List<String> terms) {
             mTerms.addAll(terms);
@@ -23,29 +29,33 @@ public class NearLiteral implements QueryComponent {
 
     @Override
     public List<Posting> getPostings(Index index, TokenProcessor processor) {
+        Pattern p = Pattern.compile(mRegex);
+        Matcher m;
         List<Posting> results = new ArrayList<>();
-        List<Posting> postings1 = new ArrayList<>();
-        List<Posting> postings2 = new ArrayList<>();
+        List<Posting> postings1;
+        List<Posting> postings2;
+        int itr = 0, jtr = 0, k = 0;
         
         // Ensure that we have a list of 3
         if (mTerms.size() == 3) {
+            m = p.matcher(mTerms.get(1).toLowerCase());
+            if (m.find() == false) { return results; }
+            k = Integer.valueOf(m.group(1));
             postings1 = index.getPostings(((DefaultTokenProcessor) processor).normalizeAndStemToken(mTerms.get(0)));
             postings2 = index.getPostings(((DefaultTokenProcessor) processor).normalizeAndStemToken(mTerms.get(2)));
-
             // Traverse all documents in postings 1 and 2
-            int itr = 0, jtr = 0;
 
             while (itr < postings1.size() && jtr < postings2.size()) {
                 //If docIDs match
                 if (postings1.get(itr).getDocumentId() == postings2.get(jtr).getDocumentId()) {
                     //if postions are within k
-                    if (areNearFrom(postings1.get(itr).getPositions(), postings2.get(jtr).getPositions(), Integer.valueOf(mTerms.get(1).replace("/","")))) {
+                    if (areNearFrom(postings1.get(itr).getPositions(), postings2.get(jtr).getPositions(), k)) {
                         //add posting to results
                         results.add(postings1.get(itr));
                     }
                     ++itr;
                     ++jtr;
-                }      
+                }
 
                 // else which index is smaller? catchup
                 else if (postings1.get(itr).getDocumentId() < postings2.get(jtr).getDocumentId()) {
