@@ -4,44 +4,29 @@ import cecs429.index.Posting;
 import java.util.ArrayList;
 import java.util.List;
 
-//Gererate 1, 2, and 3-grams for each vocabulary type in the vocabulary
-// Represent the k gram index with a new class
-
-//generate the largest k-grams it can for its literal 
-//retrieve and intersect the list of vocabulary  types for each k-gram from the k-gram index
-//Note: Wildcard must have access to kgram index
-//the intersected list will contain all candidate type strings
-//implement a post filtering step to ensure that each candidate matches the wildcard pattern
-//OR together the postings fir the processed term from each final wildcard candiate and return them as the postings list for wild cardLiteral      
-
 public class KGram {
-    // Will retain all subsequence of 
-    private static List<String> subsequence = new ArrayList<>();
-    //Index kIndex = new KGramIndex(index);
-    
-    private static List<Integer> wildCardPositions;
-    
-    // Will retain the component to be grammified
-    private static String mGram;
+    private String mTerm;
+    private List<Integer> wildCardPositions = null;
+    private static List<String> subsequence = null;
+    private List<String> parsedTerm = null;
     
     public KGram(String component) {
-        //Where is the WildCard char? Leading, Trailing, Middle
-        for (int i = 0; i < component.length(); ++i) {
-            if (component.charAt(i) == '*') {
-                wildCardPositions.add(i);
-            }
-        }
+        mTerm = component; //retains original literal
+        wildCardPositions = new ArrayList<>();
+        subsequence = new ArrayList<>();
+        parsedTerm = new ArrayList<>();
         
-        //Set up for grammification
-        grammify(component);
+        setWCIndices(); // sets all positions of '*'
+        parseTerm(); //parse mTerm into substring across '*'
         
-        System.out.println("Subsquence: ");
-        for(String str : subsequence) {
-            System.out.println(str);
-        }
+        /* This is for kgram Index? */
+        grammify();//Set up for grammification
+        
+        printSubSequence();
         
         //What kind of wild card query are we doing?
-        for (Integer i : wildCardPositions) {
+        /* Not sure if this belongs here??? */
+        wildCardPositions.forEach((i) -> {
             if (i == 0) { //Leading
                 leadingWildCard();
             } else if (i == component.length() - 1) { //Trailing
@@ -50,40 +35,78 @@ public class KGram {
             else { //middle
                 // example: colo*r
                 //intersection of Trailing Colo* and Leading *r
-            }  
+            }
+        });
+    }
+    
+    /* Will set up the indices of '*' */
+    private void setWCIndices() {
+        //Where is the WildCard char? Leading, Trailing, Middle
+        for (int i = 0; i < mTerm.length(); ++i) {
+            if (mTerm.charAt(i) == '*') {
+                wildCardPositions.add(i);
+            }
         }
     }
     
-    private static List<Posting> leadingWildCard() {
+    /* Will parse mTerm into substrings split accross '*' */
+    private void parseTerm() {
+        Integer front = 0;
+        for (Integer i : wildCardPositions) {
+            parsedTerm.add(mTerm.substring(front, i - 1));
+            front = i + 1; // '*' is at i, so go to next index
+        }
+    }
+    
+    private List<Posting> leadingWildCard() {
         //Vocabulary must be reversed
 
         return null;
     }
     
-    private static List<Posting> trailingWildCard() {
+    private List<Posting> trailingWildCard() {
         return null;
     }
     
-    private static void grammify(String component) {
+    /* This is for the KGRAM index */
+    private void grammify() {
+        String mGram = mTerm;
+        
         //Generate 1grams   
-        for (int i = 0; i < component.length(); ++i) {
+        for (int i = 0; i < mTerm.length(); ++i) {
             //ignore wild card positions
-            if (i != wildCardPositions.get(i))
-                subsequence.add(String.valueOf(component.charAt(i)));
+            if ('*' != mTerm.charAt(i))
+                subsequence.add(String.valueOf(mTerm.charAt(i)));
         }
         
-        mGram = "$" + component + "$";
+        mGram = "$" + mTerm + "$";
         
         // Generate 2 and 3-grams
         for (int gramLength = 2; gramLength < 3 + 1; ++gramLength) {
             //traverse string
             for (int j = 0; j < mGram.length(); ++j) {
-
                 // if not out of bounds
-                if (j + gramLength < mGram.length()) {
-                    subsequence.add(mGram.substring(j, j + 2));
+                if (j + gramLength <= mGram.length()) {
+                    if (!mGram.substring(j, j + gramLength).contains("*")) {
+                        subsequence.add(mGram.substring(j, j + gramLength));
+                    }
                 }
             }            
         }
+    }
+    
+    public List<String> getParsedTerm() {
+        return parsedTerm;
+    }
+    
+    public String getmTerm() {
+        return mTerm;
+    }
+       
+    private void printSubSequence() {
+        System.out.println("Subsquence: ");
+        subsequence.forEach((str) -> {
+            System.out.println(str);
+        });
     }
 }

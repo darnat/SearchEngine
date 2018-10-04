@@ -7,8 +7,11 @@ import cecs429.text.TokenProcessor;
 
 import java.lang.Math;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Iterator;
 
 /**
  * Represents a phrase literal consisting of one or more terms that must occur in sequence.
@@ -33,65 +36,87 @@ public class PhraseLiteral implements QueryComponent {
 	
 	@Override
 	public List<Posting> getPostings(Index index, TokenProcessor processor) {
-		List<Posting> result = new ArrayList<Posting>();
-		if (mTerms.size() > 0) {
-			result = index.getPostings(((DefaultTokenProcessor) processor).normalizeAndStemToken(mTerms.get(0)));
-		}
-		if (mTerms.size() == 1) {
-			return result;
+		List<Posting> postings = new ArrayList<Posting>();
+		Map<Integer, List<List<Integer>>> results = new HashMap<>();
+		List<List<Integer>> tmp;
+		List<Integer> tmpList;
+		if (mTerms.size() == 0) { return postings; }
+
+		postings = index.getPostings(((DefaultTokenProcessor) processor).normalizeAndStemToken(mTerms.get(0)));
+
+		for (Posting p: postings) {
+			tmp = new ArrayList<>();
+			for (Integer position: p.getPositions()) {
+				tmpList = new ArrayList<>();
+				tmpList.add(position);
+				tmp.add(tmpList);
+			}
+			results.put(p.getDocumentId(), tmp);
 		}
 		for (int i = 1; i < mTerms.size(); ++i) {
-			// FIXME: References being sent
-			result = getNextPostings(result, index.getPostings(((DefaultTokenProcessor) processor).normalizeAndStemToken(mTerms.get(i)))
-			);
+			results = getNextPostings(results, index.getPostings(((DefaultTokenProcessor) processor).normalizeAndStemToken(mTerms.get(i))));
 		}
-		return result;
 
-		// TODO: program this method. Retrieve the postings for the individual terms in the phrase,
-		// and positional merge them together.
+		return transformToPostings(results);
 	}
 
-	private List<Posting> getNextPostings(List<Posting> postings1, List<Posting> postings2) {
-		List<Posting> result = new ArrayList<Posting>();
+	private Map<Integer, List<List<Integer>>> getNextPostings(Map<Integer, List<List<Integer>>> current, List<Posting> postings) {
+		List<List<Integer>> tmp;
+		Iterator<List<Integer>> it;
+		List<Integer> lp;
+		Boolean added;
 
-		for (int itr1 = 0, itr2 = 0; itr1 < postings1.size() && itr2 < postings2.size();) {
-			if (postings1.get(itr1).getDocumentId() == postings2.get(itr2).getDocumentId()
-				&& areNearFrom(postings1.get(itr1).getPositions(), postings2.get(itr2).getPositions(), 1)) {
-					result.add(postings2.get(itr2));
-					++itr1;
-					++itr2;
-			} else if (postings1.get(itr1).getDocumentId() < postings2.get(itr2).getDocumentId()) {
-				++itr1;
-			} else {
-				++itr2;
-			}
-		}
-
-		return result;
-	}
-
-	private Boolean areNearFrom(List<Integer> positions1, List<Integer> positions2, int k) {
-		// Sanity Check
-		System.out.print("positions1: [ ");
-		for (Integer i : positions1) {
-			System.out.print(i + " ");
-		}
-		System.out.println("]");
-		System.out.print("positions2: [ ");
-		for (Integer i : positions2) {
-			System.out.print(i + " ");
-		}
-		System.out.println("]");
-		// End
-
-		for (int i = 0; i < positions1.size(); ++i) {
-			for (int j = i; j < positions2.size(); ++j) {
-				if (Math.abs(positions2.get(j) - positions1.get(i)) == k) {
-					return true;
+		for (Posting p: postings) {
+			if (current.containsKey(p.getDocumentId()) == false) { continue; }
+			tmp = current.get(p.getDocumentId());
+			it = tmp.iterator();
+			while (it.hasNext()) {
+				added = false;
+				lp = it.next();
+				for (Integer pos: p.getPositions()) {
+					if ((pos - lp.get(lp.size() - 1)) == 1) {
+						lp.add(pos);
+						added = true;
+						break;
+					}
+				}
+				if (added == false) {
+					it.remove();
 				}
 			}
 		}
-		return false;
+		return current;
+	}
+
+	private List<Posting> transformToPostings(Map<Integer, List<List<Integer>>> current) {
+		List<Posting> result = new ArrayList<Posting>();
+		Map.Entry<Integer, List<List<Integer>>> entry;
+		Integer docID;
+		Posting posting;
+		Boolean added;
+		List<List<Integer>> tmp;
+		
+		Iterator<Map.Entry<Integer, List<List<Integer>>>> itr = current.entrySet().iterator();
+		while (itr.hasNext()) {
+			entry = itr.next();
+			docID = entry.getKey();
+			tmp = entry.getValue();
+			if (tmp.size() == 0) { continue; }
+			posting = new Posting(docID);
+			added = false;
+			for (List<Integer> positions: tmp) {
+				if (positions.size() < mTerms.size()) { continue; }
+				added = true;
+				for (Integer pos: positions) {
+					posting.addPosition(pos);
+				}
+			}
+			if (added) {
+				result.add(posting);
+			}
+		}
+
+		return result;
 	}
 	
 	@Override
