@@ -113,7 +113,6 @@ public class gui {
 	private void initialize() {
 		// Create Frame for GUI to reside
 		frame = new JFrame();
-		frame.setResizable(false);
 		frame.setBounds(100, 100, 916, 559);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
@@ -153,6 +152,7 @@ public class gui {
 		
 		JButton stemButton = new JButton("Stem");
 		JButton vocabButton = new JButton("Vocab");
+		vocabButton.setHorizontalAlignment(SwingConstants.RIGHT);
 		
 		// Create Search Button
 		JButton searchButton = new JButton("Search");
@@ -357,8 +357,8 @@ public class gui {
 									.addComponent(lblvocabFirst))
 								.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 628, GroupLayout.PREFERRED_SIZE))
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(documentSnippetOutput, GroupLayout.PREFERRED_SIZE, 205, GroupLayout.PREFERRED_SIZE)
-							.addContainerGap())
+							.addComponent(documentSnippetOutput, GroupLayout.DEFAULT_SIZE, 202, Short.MAX_VALUE)
+							.addGap(67))
 						.addGroup(groupLayout.createSequentialGroup()
 							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
 								.addGroup(groupLayout.createSequentialGroup()
@@ -374,9 +374,9 @@ public class gui {
 									.addPreferredGap(ComponentPlacement.UNRELATED)
 									.addComponent(indexIndicator)))
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(vocabButton)
-							.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-							.addComponent(stemButton)
+							.addComponent(vocabButton, GroupLayout.PREFERRED_SIZE, 82, GroupLayout.PREFERRED_SIZE)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(stemButton, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 							.addGap(100))))
 		);
 		groupLayout.setVerticalGroup(
@@ -387,7 +387,7 @@ public class gui {
 						.addComponent(selectCorpusBtn)
 						.addComponent(directoryLabel, GroupLayout.PREFERRED_SIZE, 19, GroupLayout.PREFERRED_SIZE)
 						.addComponent(indexIndicator))
-					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addPreferredGap(ComponentPlacement.UNRELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
 						.addComponent(queryInput, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 						.addComponent(lblQuery)
@@ -403,7 +403,7 @@ public class gui {
 						.addComponent(lblqQuit)
 						.addComponent(lblvocabFirst)
 						.addComponent(lblsteamStem))
-					.addContainerGap(24, Short.MAX_VALUE))
+					.addGap(24))
 		);
 		
 		frame.getContentPane().setLayout(groupLayout);
