@@ -53,7 +53,7 @@ public class NearLiteral extends ProximityQuery {
 
     @Override
     public Boolean validProximity(int pos) {
-        return Math.abs(pos) <= mK;
+        return pos >= 1 && pos <= mK;
     }
 
     @Override
