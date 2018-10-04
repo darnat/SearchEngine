@@ -8,7 +8,7 @@ Complete Search Engine:
 
 # Features
 
-  - Wildcard Queries
+  - Extended Queries
   - NEAR Operator
   - OR Queries
   - AND Queries
