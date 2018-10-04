@@ -23,11 +23,6 @@ public class NotQuery implements QueryComponent {
 	}
 
 	@Override
-	public boolean isNegative() {
-		return true;
-	}
-
-	@Override
 	public List<Posting> getPostings(Index index, TokenProcessor processor) {
 		Result results = new Result(mComponents.get(0).getPostings(index, processor));
 

@@ -15,10 +15,4 @@ public interface QueryComponent {
      * Retrieves a list of postings for the query component, using an Index as the source.
      */
     List<Posting> getPostings(Index index, TokenProcessor processor);
-    /**
-     * Returns type of component (NOT query = true, all other are = false)
-     */
-    default boolean isNegative() {
-        return false;
-    }
 }

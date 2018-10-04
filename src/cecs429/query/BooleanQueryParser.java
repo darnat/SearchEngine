@@ -20,18 +20,30 @@ import java.util.regex.Matcher;
  */
 public class BooleanQueryParser {
 
+	/* Regex split query into tokens */
 	private String mRegex;
+	/* How to define a Literal (Everything which is not not a literal) */
 	private String mLiteralRegex;
+	/* Stack of operators */
 	private Stack<String> mOperator = new Stack<String>();
+	/* Stack of components */
 	private Stack<QueryComponent> mComponents = new Stack<QueryComponent>();
 
+	/**
+	 * Public Constructor no params needed
+	 */
 	public BooleanQueryParser() {
-		mLiteralRegex = "[^ \"\\(\\)\\+\\[\\]]+";
-		// mRegex = "([a-zA-Z0-9]+\\-?[a-zA-Z0-9]+)|(\")|(\\()|(\\))|(\\-)|(\\+)|(\\[)|(\\])|(NEAR\\/[0-9]+)";
+		mLiteralRegex = "[^ \"\\(\\)\\+\\[\\]\\/]+";
 		mRegex = "(\")|(\\()|(\\))| (\\-)|(\\+)|(\\[)|(\\])|(NEAR\\/[0-9]+)|(" + mLiteralRegex + ")";
 	}
 
-	// Check if regex if valid
+	/**
+	 * Parse a query :
+	 * - split it among token
+	 * - read token by token
+	 * - compress / eval by pop and push in the stack
+	 * - eval the final stack
+	 */
 	public QueryComponent parseQuery(String query) {
 		Pattern p = Pattern.compile(mRegex);
 		Boolean lastEntryLiteral = false;
@@ -43,15 +55,13 @@ public class BooleanQueryParser {
 		query = query.trim();
 		m = p.matcher(query);
 		while (m.find()) {
-			item = m.group(0).trim();
-			System.out.println(item);
-			// if (item.matches(mLiteralRegex)) {
-			if (item.matches("[a-zA-Z0-9]+\\-?[a-zA-Z0-9]+")) {
+			item = m.group(0);
+			if (item.matches(mLiteralRegex)) {
 				if (lastEntryLiteral) { addOperator("AND", insideLiteral, lastEntryLiteral); }
-				mComponents.push(new TermLiteral(item));
+				mComponents.push(new TermLiteral(item.trim()));
 				lastEntryLiteral = true;
 			} else {
-				if (addOperator(item, insideLiteral, lastEntryLiteral)) { lastEntryLiteral = false; }
+				if (addOperator(item.trim(), insideLiteral, lastEntryLiteral)) { lastEntryLiteral = false; }
 				if (item.equals("\"")) { insideLiteral = !insideLiteral; }
 			}
 		}
@@ -59,6 +69,9 @@ public class BooleanQueryParser {
 		return mComponents.pop();
 	}
 
+	/**
+	 * Eval the stack
+	 */
 	private void parseTree() {
 		String op = null;
 		while (mOperator.size() > 0 && mComponents.size() > 0) {
@@ -67,6 +80,9 @@ public class BooleanQueryParser {
 		}
 	}
 
+	/**
+	 * Add an operator to the operator stack / eval / compress when needed
+	 */
 	private boolean addOperator(String item, Boolean insideLiteral, Boolean lastEntryLiteral) {
 		String op = null;
 		List<String> terms;
@@ -98,6 +114,9 @@ public class BooleanQueryParser {
 		return false;
 	}
 
+	/**
+	 * Parse each function supported
+	 */
 	private QueryComponent parseFunction(QueryComponent cm1, String operator, QueryComponent cm2) {
 		if (operator.equals("AND")) {
 			return new AndQuery(cm2, cm1);
@@ -110,30 +129,4 @@ public class BooleanQueryParser {
 		}
 		return null;
 	}
-
-	// /**
-	//  * Identifies a portion of a string with a starting index and a length.
-	//  */
-	// private static class StringBounds {
-	// 	int start;
-	// 	int length;
-		
-	// 	StringBounds(int start, int length) {
-	// 		this.start = start;
-	// 		this.length = length;
-	// 	}
-	// }
-	
-	// /**
-	//  * Encapsulates a QueryComponent and the StringBounds that led to its parsing.
-	//  */
-	// private static class Literal {
-	// 	StringBounds bounds;
-	// 	QueryComponent literalComponent;
-		
-	// 	Literal(StringBounds bounds, QueryComponent literalComponent) {
-	// 		this.bounds = bounds;
-	// 		this.literalComponent = literalComponent;
-	// 	}
-	// }
 }
