@@ -57,15 +57,14 @@ public class Result {
                     
                     //Maybe repurpose these postings (not necessary to collect)
                     // Merge positions as well
-                    /*
-                    Posting posting1 = list1.get(itr);
-                    Posting posting2 = list2.get(jtr);
+                    
+                    Posting posting1 = mResults.get(itr);
+                    Posting posting2 = list.get(jtr);
 
 
                     posting2.getPositions().forEach((i) -> {
                         posting1.addPosition(i);
                     });
-                    */
 
                     tempResults.add(mResults.get(itr));
                     ++itr;

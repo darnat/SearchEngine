@@ -10,7 +10,8 @@ include(UseJava)
 # set(CMAKE_JAVA_COMPILE_FLAGS "-source" "1.8" "-target" "1.8" "-Xlint:deprecation" "-Xlint:unchecked" -nowarn)
 set(CMAKE_JAVA_COMPILE_FLAGS "-source" "1.8" "-target" "1.8" "-sourcepath" "src")
 # set(CMAKE_JAVA_COMPILE_FLAGS "-source" "1.8" "-target" "1.8")
-set(MAIN_CLASS "edu.csulb.PositionalInvertedIndexer")
+# set(MAIN_CLASS "edu.csulb.PositionalInvertedIndexer")
+set(MAIN_CLASS "edu.csulb.gui")
 set(OUTPUT_DIR ${PROJECT_SOURCE_DIR}/bin)
 
 include_directories(${PROJECT_SOURCE_DIR}/src) # Test
