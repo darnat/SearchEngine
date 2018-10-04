@@ -151,7 +151,9 @@ public class gui {
 		scrollPaneTitle.setHorizontalAlignment(SwingConstants.CENTER);
 		scrollPane.setColumnHeaderView(scrollPaneTitle);
 		
-
+		JButton stemButton = new JButton("Stem");
+		JButton vocabButton = new JButton("Vocab");
+		
 		// Create Search Button
 		JButton searchButton = new JButton("Search");
 		// Add listener on Search Button Click
@@ -238,7 +240,8 @@ public class gui {
 			}
 		});
 		searchButton.setEnabled(false);
-		
+		stemButton.setEnabled(false);
+		vocabButton.setEnabled(false);
 		// Create Select Corpus button to get directory of corpus
 		JButton selectCorpusBtn = new JButton("Select Corpus");
 		
@@ -256,6 +259,13 @@ public class gui {
 					queryInput.setEditable(false);
 				}
 				
+				if(stemButton.isEnabled()) {
+					stemButton.setEnabled(false);
+				}
+				
+				if(vocabButton.isEnabled()) {
+					vocabButton.setEnabled(false);
+				}
 				// Open FileChooser UI to user
 				int result = fileChooser.showDialog(new JFrame("Select corpus"), "Select");
 				// Check if directory has been selected
@@ -281,6 +291,14 @@ public class gui {
 							if(!queryInput.isEditable()) {
 								queryInput.setEditable(true);
 							}
+							
+							if(!stemButton.isEnabled()) {
+								stemButton.setEnabled(true);
+							}
+							
+							if(!vocabButton.isEnabled()) {
+								vocabButton.setEnabled(true);
+							}
 						}
 					}.start();
 				// Condition if cancel was clicked
@@ -295,19 +313,27 @@ public class gui {
 					if(queryInput.isEditable()) {
 						queryInput.setEditable(false);
 					}
+					
+					if(stemButton.isEnabled()) {
+						stemButton.setEnabled(false);
+					}
+					
+					if(vocabButton.isEnabled()) {
+						vocabButton.setEnabled(false);
+					}
 				}
 			}
 		});
 		
-		JButton btnNewButton = new JButton("Stem");
-		btnNewButton.addActionListener(new ActionListener() {
+
+		stemButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				queryInput.setText(":stem ");
 			}
 		});
 		
-		JButton btnVocab = new JButton("Vocab");
-		btnVocab.addActionListener(new ActionListener() {
+
+		vocabButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				queryInput.setText(":vocab");
 				searchButton.doClick();
@@ -324,6 +350,18 @@ public class gui {
 						.addGroup(groupLayout.createSequentialGroup()
 							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
 								.addGroup(groupLayout.createSequentialGroup()
+									.addComponent(lblqQuit)
+									.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+									.addComponent(lblsteamStem)
+									.addGap(73)
+									.addComponent(lblvocabFirst))
+								.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 628, GroupLayout.PREFERRED_SIZE))
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(documentSnippetOutput, GroupLayout.PREFERRED_SIZE, 205, GroupLayout.PREFERRED_SIZE)
+							.addContainerGap())
+						.addGroup(groupLayout.createSequentialGroup()
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
+								.addGroup(groupLayout.createSequentialGroup()
 									.addComponent(lblQuery)
 									.addPreferredGap(ComponentPlacement.RELATED)
 									.addComponent(queryInput, GroupLayout.PREFERRED_SIZE, 464, GroupLayout.PREFERRED_SIZE)
@@ -336,21 +374,10 @@ public class gui {
 									.addPreferredGap(ComponentPlacement.UNRELATED)
 									.addComponent(indexIndicator)))
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(btnVocab)
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(btnNewButton))
-						.addGroup(groupLayout.createSequentialGroup()
-							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
-								.addGroup(groupLayout.createSequentialGroup()
-									.addComponent(lblqQuit)
-									.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-									.addComponent(lblsteamStem)
-									.addGap(73)
-									.addComponent(lblvocabFirst))
-								.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 628, GroupLayout.PREFERRED_SIZE))
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(documentSnippetOutput, GroupLayout.DEFAULT_SIZE, 198, Short.MAX_VALUE)))
-					.addContainerGap())
+							.addComponent(vocabButton)
+							.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+							.addComponent(stemButton)
+							.addGap(100))))
 		);
 		groupLayout.setVerticalGroup(
 			groupLayout.createParallelGroup(Alignment.LEADING)
@@ -365,8 +392,8 @@ public class gui {
 						.addComponent(queryInput, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 						.addComponent(lblQuery)
 						.addComponent(searchButton)
-						.addComponent(btnVocab)
-						.addComponent(btnNewButton))
+						.addComponent(vocabButton)
+						.addComponent(stemButton))
 					.addPreferredGap(ComponentPlacement.UNRELATED)
 					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
 						.addComponent(documentSnippetOutput)
@@ -376,7 +403,7 @@ public class gui {
 						.addComponent(lblqQuit)
 						.addComponent(lblvocabFirst)
 						.addComponent(lblsteamStem))
-					.addContainerGap(33, Short.MAX_VALUE))
+					.addContainerGap(24, Short.MAX_VALUE))
 		);
 		
 		frame.getContentPane().setLayout(groupLayout);
