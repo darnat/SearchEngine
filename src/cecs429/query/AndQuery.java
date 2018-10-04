@@ -6,6 +6,7 @@ import cecs429.query.Result.IntersectMerge;
 import cecs429.text.TokenProcessor;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -20,6 +21,12 @@ public class AndQuery implements QueryComponent {
         mComponents = components;
     }
 
+    public AndQuery(QueryComponent cm1, QueryComponent cm2) {
+        mComponents = new ArrayList<QueryComponent>();
+        mComponents.add(cm1);
+        mComponents.add(cm2);
+    }
+
     @Override
     public List<Posting> getPostings(Index index, TokenProcessor processor) {
         //initialize result with first postings
@@ -31,7 +38,7 @@ public class AndQuery implements QueryComponent {
 
             //intersect with previous
             results.util.mergeWith(mComponents.get(i).getPostings(index, processor));
-        }            
+        }
         
         return results.getmResults();
     }

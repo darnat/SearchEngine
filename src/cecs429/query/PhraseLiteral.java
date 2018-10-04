@@ -7,7 +7,7 @@ import cecs429.text.TokenProcessor;
 
 import java.lang.Math;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -33,11 +33,15 @@ public class PhraseLiteral implements QueryComponent {
 	public PhraseLiteral(String terms) {
 		mTerms.addAll(Arrays.asList(terms.split(" ")));
 	}
+
+	public List<String> getTerms() {
+		return mTerms;
+	}
 	
 	@Override
 	public List<Posting> getPostings(Index index, TokenProcessor processor) {
 		List<Posting> postings = new ArrayList<Posting>();
-		Map<Integer, List<List<Integer>>> results = new HashMap<>();
+		Map<Integer, List<List<Integer>>> results = new TreeMap<>();
 		List<List<Integer>> tmp;
 		List<Integer> tmpList;
 		if (mTerms.size() == 0) { return postings; }

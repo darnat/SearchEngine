@@ -27,6 +27,12 @@ public class NearLiteral implements QueryComponent {
             mTerms.addAll(Arrays.asList(terms.split(" ")));
     }
 
+    public NearLiteral(String term1, String nearOp, String term2) {
+        mTerms.add(term1);
+        mTerms.add(nearOp);
+        mTerms.add(term2);
+    }
+
     @Override
     public List<Posting> getPostings(Index index, TokenProcessor processor) {
         Pattern p = Pattern.compile(mRegex);

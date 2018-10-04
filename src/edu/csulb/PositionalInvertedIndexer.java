@@ -63,7 +63,7 @@ public class PositionalInvertedIndexer {
 				}
 				System.out.println("Total number of vocabulary terms: " + vocabulary.size());
 			} else {
-				QueryComponent qc = queryParser.parseQuery(query);
+				QueryComponent qc = queryParser.parseQuery3(query);
 
 				if (qc != null) {
 					List<Posting> postings = qc.getPostings(index, processor);

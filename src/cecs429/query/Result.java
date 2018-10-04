@@ -84,6 +84,44 @@ public class Result {
             tempResults.clear();
         }
     }
+
+    public class NotMerge implements Merge {
+        
+        @Override
+        public void mergeWith(List<Posting> list) {
+            int itr = 0, jtr = 0;
+            List<Posting> tempResults = new ArrayList<>();
+
+            /*
+            System.out.println("list1IN: ");
+            printList(mResults);
+            System.out.println("list2IN: ");
+            printList(list);
+            */
+            
+            list1Size = mResults.size();
+            list2Size = list.size();
+
+            while (itr < list1Size && jtr < list2Size) {            
+                if (mResults.get(itr).getDocumentId() == list.get(jtr).getDocumentId()) {
+                    // tempResults.add(mResults.get(itr));
+                    ++itr;
+                    ++jtr;
+                }
+                else if (mResults.get(itr).getDocumentId() < list.get(jtr).getDocumentId()) {
+                    tempResults.add(mResults.get(itr));
+                    ++itr;
+                }
+                else if (list.get(jtr).getDocumentId() < mResults.get(itr).getDocumentId()) {
+                    ++jtr;
+                }
+            }
+
+            mResults.clear();
+            mResults.addAll(tempResults);
+            tempResults.clear();
+        }
+    }
     
     public class UnionMerge implements Merge {
         
