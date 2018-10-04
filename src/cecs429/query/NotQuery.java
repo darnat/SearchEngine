@@ -23,11 +23,6 @@ public class NotQuery implements QueryComponent {
 	}
 
 	@Override
-	public boolean isNegative() {
-		return true;
-	}
-
-	@Override
 	public List<Posting> getPostings(Index index, TokenProcessor processor) {
             //initialize result with first postings
             List<Posting> results = new ArrayList<>();

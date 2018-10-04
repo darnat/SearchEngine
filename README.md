@@ -8,9 +8,10 @@ Complete Search Engine:
 
 # Features
 
-  - Wildcard Queries
+  - Extended Queries
   - NEAR Operator
   - OR Queries
+  - Phrase Literal
   - AND Queries
   - NOT Queries
   - Document Snippets
