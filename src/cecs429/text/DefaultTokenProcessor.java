@@ -45,26 +45,15 @@ public class DefaultTokenProcessor implements TokenProcessor {
 	public String normalizeToken(String token) {
 		// Remove single/double quotes and lowercase token before adding
 		StringBuilder tokenSB = new StringBuilder(token.replaceAll("[\'\"]", "").toLowerCase());
-		int len = tokenSB.length();
 
 		// Remove non-alphanumeric characters from beginning of token
-		for (int i = 0; len > 0 && i < len; i++) {
-			if (!Character.isLetterOrDigit(tokenSB.charAt(i))) {
-				tokenSB.deleteCharAt(i);
-				len = tokenSB.length();
-			} else {
-				break;
-			}
+		while (tokenSB.length() > 0 && !Character.isLetterOrDigit(tokenSB.charAt(0))) {
+			tokenSB.deleteCharAt(0);
 		}
 
 		// Remove non-alphanumeric characters from end of token
-		for (int j = len - 1; len > 0 && j >= 0; j--) {
-			if (!Character.isLetterOrDigit(tokenSB.charAt(j))) {
-				tokenSB.deleteCharAt(j);
-				len = tokenSB.length();
-			} else {
-				break;
-			}
+		while (tokenSB.length() > 0 && !Character.isLetterOrDigit(tokenSB.charAt(tokenSB.length() - 1))) {
+			tokenSB.deleteCharAt(tokenSB.length() - 1);
 		}
 
 		return tokenSB.toString();
