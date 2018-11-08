@@ -283,7 +283,7 @@ public class gui {
 
 							long start = System.currentTimeMillis();
 							index = indexCorpus(corpus, processor);
-							diskIndexWriter.writeIndex(index, Paths.get(fileChooser.getSelectedFile().getAbsolutePath()).toAbsolutePath() + File.separator + "disk");
+							diskIndexWriter.writeIndex(index, Paths.get(fileChooser.getSelectedFile().getAbsolutePath(), "disk"));
 							long end = System.currentTimeMillis();
 							indexIndicator.setText("Indexed: " + ((end - start) / 1000) + " seconds.");
 							// Check if search button was disabled, to enable it
