@@ -7,6 +7,13 @@ include(UseJava)
 
 # enable_testing()
 
+function(JOIN VALUES GLUE OUTPUT)
+  string (REGEX REPLACE "([^\\]|^);" "\\1${GLUE}" _TMP_STR "${VALUES}")
+  string (REGEX REPLACE "[\\](.)" "\\1" _TMP_STR "${_TMP_STR}") #fixes escaping
+  set (${OUTPUT} "${_TMP_STR}" PARENT_SCOPE)
+endfunction()
+
+
 set(CMAKE_JAVA_COMPILE_FLAGS "-source" "1.8" "-target" "1.8" "-sourcepath" "src")
 # set(MAIN_CLASS "edu.csulb.PositionalInvertedIndexer") # console mode
 set(MAIN_CLASS "edu.csulb.gui") # gui mode
@@ -23,4 +30,6 @@ add_jar(${EXECUTABLE_NAME}
         OUTPUT_DIR "${OUTPUT_DIR}"
         ENTRY_POINT "${MAIN_CLASS}")
 
-add_custom_target(run COMMAND java "-cp" "${OUTPUT_DIR}/${EXECUTABLE_NAME}.jar:${JAR_FILES}" "${MAIN_CLASS}")
+JOIN("${JAR_FILES}" ":" OUTPUT_JAR_FILES)
+
+add_custom_target(run COMMAND java "-cp" "${OUTPUT_DIR}/${EXECUTABLE_NAME}.jar:${OUTPUT_JAR_FILES}" "${MAIN_CLASS}")
