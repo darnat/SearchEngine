@@ -41,7 +41,7 @@ public class PositionalInvertedIndexer {
 		System.out.println("\nIndexing in progress...");
 		long start = System.currentTimeMillis();
 		Index index = indexCorpus(corpus, processor);
-		diskIndexWriter.writeIndex(index, Paths.get(sc.nextLine()).toAbsolutePath() + File.separator + "disk");
+		diskIndexWriter.writeIndex(index, Paths.get(sc.nextLine(), "disk"));
 		long end = System.currentTimeMillis();
 		System.out.println("Indexing completed in " + ((end - start) / 1000) + " seconds.");
 
