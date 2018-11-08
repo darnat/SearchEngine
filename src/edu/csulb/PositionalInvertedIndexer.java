@@ -29,6 +29,7 @@ public class PositionalInvertedIndexer {
 		Scanner sc = new Scanner(System.in);	
 		String query = null;
 		Path corpusPath = null;
+                
 
 		System.out.print("Please enter the name of a directory you would like to index: ");
 		corpusPath = Paths.get(sc.nextLine()).toAbsolutePath().normalize();
@@ -49,7 +50,14 @@ public class PositionalInvertedIndexer {
 		diw.writeIndex(index, corpusPath.resolve("index"));
 
 		System.exit(0);
-
+                
+                /*
+                Path path;
+                String str = Paths.get(sc.nextLine()).toAbsolutePath() + File.separator + "disk";
+                path = Paths.get(str);
+                
+		diskIndexWriter.writeIndex(index, path);
+                   */
 		// while(true) {
 		// 	System.out.println("\nSpecial queries available:");
 		// 	System.out.println(":q - To quit application");
