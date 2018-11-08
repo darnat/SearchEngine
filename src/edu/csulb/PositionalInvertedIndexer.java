@@ -6,6 +6,7 @@ import cecs429.documents.DocumentCorpus;
 import cecs429.documents.Snippet;
 import cecs429.index.Index;
 import cecs429.index.PositionalInvertedIndex;
+import cecs429.index.DiskIndexWriter;
 import cecs429.index.Posting;
 import cecs429.query.BooleanQueryParser;
 import cecs429.query.QueryComponent;
@@ -13,6 +14,8 @@ import cecs429.text.DefaultTokenProcessor;
 import cecs429.text.EnglishTokenStream;
 import cecs429.text.Stemmer;
 import cecs429.text.TokenProcessor;
+
+import java.io.File;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,10 +31,12 @@ public class PositionalInvertedIndexer {
 		DocumentCorpus corpus = DirectoryCorpus.loadJsonDirectory(Paths.get(sc.nextLine()).toAbsolutePath(), ".json");		
 		TokenProcessor processor = new DefaultTokenProcessor();
 		BooleanQueryParser queryParser = new BooleanQueryParser();
+		DiskIndexWriter diskIndexWriter = new DiskIndexWriter();
 
 		System.out.println("\nIndexing in progress...");
 		long start = System.currentTimeMillis();
 		Index index = indexCorpus(corpus, processor);
+		diskIndexWriter.writeIndex(index, Paths.get(sc.nextLine()).toAbsolutePath() + File.separator + "disk");
 		long end = System.currentTimeMillis();
 		System.out.println("Indexing completed in " + ((end - start) / 1000) + " seconds.");
 
