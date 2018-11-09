@@ -33,31 +33,30 @@ public class PositionalInvertedIndexer {
 
 		System.out.print("Please enter the name of a directory you would like to index: ");
 		corpusPath = Paths.get(sc.nextLine()).toAbsolutePath().normalize();
-		DocumentCorpus corpus = DirectoryCorpus.loadJsonDirectory(corpusPath, ".json");
-		TokenProcessor processor = new DefaultTokenProcessor();
-		BooleanQueryParser queryParser = new BooleanQueryParser();
-		DiskIndexWriter diskIndexWriter = new DiskIndexWriter();
+                
+                if (corpusPath.toFile().exists()) {                    
+                    DocumentCorpus corpus = DirectoryCorpus.loadJsonDirectory(corpusPath, ".json");
+                    corpus.getCorpusSize();
+                    
+                    TokenProcessor processor = new DefaultTokenProcessor();
+                    BooleanQueryParser queryParser = new BooleanQueryParser();
+                    DiskIndexWriter diskIndexWriter = new DiskIndexWriter();
 
-		System.out.println("\nIndexing in progress...");
-		long start = System.currentTimeMillis();
-		Index index = indexCorpus(corpus, processor);
-		diskIndexWriter.writeIndex(index, Paths.get(sc.nextLine(), "disk"));
-		long end = System.currentTimeMillis();
-		System.out.println("Indexing completed in " + ((end - start) / 1000) + " seconds.");
-
-		// Save disk-based index
-		DiskIndexWriter diw = new DiskIndexWriter();
-		diw.writeIndex(index, corpusPath.resolve("index"));
-
+                    System.out.println("\nIndexing in progress...");
+                    //long start = System.currentTimeMillis();
+                    Index index = indexCorpus(corpus, processor);
+                    //diskIndexWriter.writeIndex(index, Paths.get(sc.nextLine(), "disk"));
+                    //long end = System.currentTimeMillis();
+                    //System.out.println("Indexing completed in " + ((end - start) / 1000) + " seconds.");
+                    
+                    
+                    // Save disk-based index
+                    DiskIndexWriter diw = new DiskIndexWriter();
+                    diw.writeIndex(index, corpusPath.resolve("index"));          
+                }
+                
 		System.exit(0);
                 
-                /*
-                Path path;
-                String str = Paths.get(sc.nextLine()).toAbsolutePath() + File.separator + "disk";
-                path = Paths.get(str);
-                
-		diskIndexWriter.writeIndex(index, path);
-                   */
 		// while(true) {
 		// 	System.out.println("\nSpecial queries available:");
 		// 	System.out.println(":q - To quit application");
