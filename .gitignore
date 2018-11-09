@@ -17,4 +17,6 @@ build.xml
 manifest.mf
 build/
 corpus/
+corpus_small/
+disk/
 nbproject/
