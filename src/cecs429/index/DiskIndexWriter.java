@@ -1,5 +1,7 @@
 package cecs429.index;
 
+import cecs429.documents.CalcDocWeights;
+import cecs429.documents.DocumentCorpus;
 import libs.btree4j.*;
 
 import java.io.*;
@@ -7,12 +9,12 @@ import java.nio.file.*;
 import java.util.*;
 
 public class DiskIndexWriter {
-	public void writeIndex(Index idx, Path absolutePath) {
+	public void writeIndex(Index idx, DocumentCorpus corpus, Path absolutePath) {
 		List<String> vocab = idx.getVocabulary();
 		try {
 			List<Integer> postingsPos = createPostings(idx, vocab, absolutePath.resolve("postings.bin").toFile());
 			createBPlusTreeIndex(absolutePath.resolve("bplustree.bin").toFile(), vocab, postingsPos);
-                        //CalcDocWeights.procedure(corpus, absolutePath.resolve("docWeights.bin").toFile(), idx);
+                        CalcDocWeights.procedure(corpus, absolutePath.resolve("docWeights.bin").toFile(), idx);
                         
 			// Files below are not needed since implementing indx as B+ tree
 			// List<Integer> vocabPos = createIndexVocab(vocab, absolutePath.resolve("vocab.bin").toFile());

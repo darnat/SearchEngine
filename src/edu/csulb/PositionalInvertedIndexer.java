@@ -43,16 +43,17 @@ public class PositionalInvertedIndexer {
                     DiskIndexWriter diskIndexWriter = new DiskIndexWriter();
 
                     System.out.println("\nIndexing in progress...");
-                    //long start = System.currentTimeMillis();
+                    long start = System.currentTimeMillis();
                     Index index = indexCorpus(corpus, processor);
                     //diskIndexWriter.writeIndex(index, Paths.get(sc.nextLine(), "disk"));
-                    //long end = System.currentTimeMillis();
-                    //System.out.println("Indexing completed in " + ((end - start) / 1000) + " seconds.");
+                    
                     
                     
                     // Save disk-based index
                     DiskIndexWriter diw = new DiskIndexWriter();
-                    diw.writeIndex(index, corpusPath.resolve("index"));          
+                    diw.writeIndex(index, corpus, corpusPath.resolve("index")); 
+                    long end = System.currentTimeMillis();
+                    System.out.println("Indexing completed in " + ((end - start) / 1000) + " seconds.");
                 }
                 
 		System.exit(0);
