@@ -16,7 +16,6 @@ dummy/*
 build.xml
 manifest.mf
 build/
-corpus/
-corpus_small/
-disk/
+corpus/*
+corpus_small/*
 nbproject/
