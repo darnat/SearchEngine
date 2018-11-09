@@ -14,7 +14,7 @@ public class DiskIndexWriter {
 		try {
 			List<Integer> postingsPos = createPostings(idx, vocab, absolutePath.resolve("postings.bin").toFile());
 			createBPlusTreeIndex(absolutePath.resolve("bplustree.bin").toFile(), vocab, postingsPos);
-                        CalcDocWeights.procedure(corpus, absolutePath.resolve("docWeights.bin").toFile(), idx);
+                        //CalcDocWeights.procedure(corpus, absolutePath.resolve("docWeights.bin").toFile(), idx);
                         
 			// Files below are not needed since implementing indx as B+ tree
 			// List<Integer> vocabPos = createIndexVocab(vocab, absolutePath.resolve("vocab.bin").toFile());
