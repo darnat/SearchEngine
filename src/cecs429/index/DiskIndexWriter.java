@@ -8,21 +8,17 @@ import java.nio.file.*;
 import java.util.*;
 
 public class DiskIndexWriter {
-	public void writeIndex(Index idx, Path absolutePath) {
+	public void writeIndex(Path absolutePath, Index idx) throws IOException, BTreeException {
 		List<String> vocab = idx.getVocabulary();
-		try {
-			List<Integer> postingsPos = createPostings(idx, vocab, absolutePath.resolve("postings.bin").toFile());
-			createBPlusTreeIndex(absolutePath.resolve("bplustree.bin").toFile(), vocab, postingsPos);
+		List<Integer> postingsPos = createPostings(absolutePath.resolve("postings.bin").toFile(), idx, vocab);
+		createBPlusTreeIndex(absolutePath.resolve("bplustree.bin").toFile(), vocab, postingsPos);
 
-			// Files below are not needed since implementing indx as B+ tree
-			// List<Integer> vocabPos = createIndexVocab(vocab, absolutePath.resolve("vocab.bin").toFile());
-			// createVocabTable(vocabPos, postingsPos, absolutePath.resolve("vocabTable.bin").toFile());
-		} catch(BTreeException|IOException ex) {
-			System.out.println("Error creating disk-based index: " + ex.getMessage());
-		}
+		// Files below are not needed since implementing index as B+ tree
+		// List<Integer> vocabPos = createIndexVocab(vocab, absolutePath.resolve("vocab.bin").toFile());
+		// createVocabTable(vocabPos, postingsPos, absolutePath.resolve("vocabTable.bin").toFile());
 	}
 
-	private List<Integer> createPostings(Index idx, List<String> vocab, File file) throws IOException {	
+	private List<Integer> createPostings(File file, Index idx, List<String> vocab) throws IOException {
 		List<Integer> pos = new ArrayList<>();
 		int docIdGap;
 		int posGap;
@@ -53,7 +49,7 @@ public class DiskIndexWriter {
 		}
 	}
 
-	private void createBPlusTreeIndex(File file, List<String> vocab, List<Integer> postings) throws BTreeException {
+	private void createBPlusTreeIndex(File file, List<String> vocab, List<Integer> postings) throws BTreeException, IOException {
 		BIndexFile bPlusTree = new BIndexFile(file);
 		bPlusTree.init(false);
 
@@ -62,6 +58,22 @@ public class DiskIndexWriter {
 
 		while (iterVocab.hasNext() && iterPos.hasNext()) {
 			bPlusTree.addValue(new Value(iterVocab.next()), new Value(iterPos.next()));
+		}
+
+		bPlusTree.flush(true, true);
+		bPlusTree.close();
+	}
+
+	public void createDocumentWeights(Path absolutePath, Map<Integer, Map<String, Integer>> docWeightList)  throws IOException {
+		try (DataOutputStream out = new DataOutputStream(new FileOutputStream(absolutePath.resolve("docWeights.bin").toFile()))) {
+			for (Map<String, Integer> docWeights : docWeightList.values()) {
+				double ld = docWeights.values()
+					.stream()
+					.map(a -> Math.pow(1.0 + Math.log(a), 2))
+					.reduce(0.0, Double::sum);
+
+				out.writeDouble(Math.sqrt(ld));
+			}
 		}
 	}
 

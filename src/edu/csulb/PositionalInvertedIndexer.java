@@ -5,6 +5,7 @@ import cecs429.documents.Document;
 import cecs429.documents.DocumentCorpus;
 import cecs429.documents.Snippet;
 import cecs429.index.DiskIndexWriter;
+import cecs429.index.DiskPositionalIndex;
 import cecs429.index.Index;
 import cecs429.index.PositionalInvertedIndex;
 import cecs429.index.Posting;
@@ -35,14 +36,27 @@ public class PositionalInvertedIndexer {
 
 		System.out.println("\nIndexing in progress...");
 		long start = System.currentTimeMillis();
-		Index index = indexCorpus(corpus, processor);
+		indexCorpus(corpus, processor, corpusPath.resolve("index"));
 		long end = System.currentTimeMillis();
 		System.out.println("Indexing completed in " + ((end - start) / 1000) + " seconds.");
 
-		// Save disk-based index
-		DiskIndexWriter diw = new DiskIndexWriter();
-		diw.writeIndex(index, corpusPath.resolve("index"));
+		// Testing
+		try {
+			DiskPositionalIndex dpi = new DiskPositionalIndex(corpusPath.resolve("index"));
+			List<Posting> postings = dpi.getPostings("park"); // Sample query word
+			
+			for (Posting p : postings) {
+				System.out.println(p);
+			}
 
+			System.out.println("Fetched Ld: " + dpi.getDocWeight(9));
+
+			dpi.closeFiles();
+		} catch(Exception ex) {
+			System.out.println(ex.getMessage());
+		}
+
+		sc.close();
 		System.exit(0);
 
 		// while(true) {
@@ -65,13 +79,13 @@ public class PositionalInvertedIndexer {
 		// 		index = indexCorpus(corpus, processor);
 		// 		end = System.currentTimeMillis();
 		// 		System.out.println("Indexing completed in " + ((end - start) / 1000) + " seconds.");
-		// 	} else if (query.startsWith(":vocab")) {
-		// 		List<String> vocabulary = index.getVocabulary();
-		// 		System.out.println("Printing first 1000 terms in vocabulary of corpus.");
-		// 		for (int i = 0; i < 1000 && i < vocabulary.size(); i++) {
-		// 			System.out.println(i + ": " + vocabulary.get(i));
-		// 		}
-		// 		System.out.println("Total number of vocabulary terms: " + vocabulary.size());
+		// 	// } else if (query.startsWith(":vocab")) {
+		// 	// 	List<String> vocabulary = index.getVocabulary();
+		// 	// 	System.out.println("Printing first 1000 terms in vocabulary of corpus.");
+		// 	// 	for (int i = 0; i < 1000 && i < vocabulary.size(); i++) {
+		// 	// 		System.out.println(i + ": " + vocabulary.get(i));
+		// 	// 	}
+		// 	// 	System.out.println("Total number of vocabulary terms: " + vocabulary.size());
 		// 	} else {
 		// 		QueryComponent qc = queryParser.parseQuery(query);
 
@@ -121,9 +135,11 @@ public class PositionalInvertedIndexer {
 		// System.exit(0);
 	}
 	
-	private static Index indexCorpus(DocumentCorpus corpus, TokenProcessor processor) {
+	private static void indexCorpus(DocumentCorpus corpus, TokenProcessor processor, Path absolutePath) {
 		Iterable<Document> documents = corpus.getDocuments();
 		PositionalInvertedIndex index = new PositionalInvertedIndex();
+		DiskIndexWriter diw = new DiskIndexWriter();
+		Map<Integer, Map<String, Integer>> docWeightList = new HashMap<>();
 
 		for (Document doc : documents) {
 			int position = 0;
@@ -132,11 +148,35 @@ public class PositionalInvertedIndexer {
 				List<String> terms = processor.processToken(token);
 				for (String term : terms) {
 					index.addTerm(term, doc.getId(), position);
+					
+					// For document weight calculations
+					if (docWeightList.containsKey(doc.getId())) {
+						Map<String, Integer> docWeights = docWeightList.get(doc.getId());
+
+						if (docWeights.containsKey(term)) {
+							docWeights.put(term, docWeights.get(term) + 1); // increment term frequency
+						} else {
+							docWeights.put(term, 1);
+						}
+					} else {
+						Map<String, Integer> weight = new HashMap<String, Integer>();
+						weight.put(term, 1);
+						docWeightList.put(doc.getId(), weight);
+					}
 				}
 				position++;
 			}
 		}
 
-		return index;
+		try {
+			// Save disk-based index
+			diw.writeIndex(absolutePath, index);
+
+			// Save document weights
+			diw.createDocumentWeights(absolutePath, docWeightList);
+
+		} catch (Exception ex) {
+			System.out.println("Error creating disk-based index: " + ex.getMessage());
+		}
 	}
 }

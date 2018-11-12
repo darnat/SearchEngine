@@ -1,5 +1,6 @@
 **/*.class
 **/*.json
+**/*.bin
 .classpath
 .project
 CMakeCache.txt
