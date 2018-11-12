@@ -16,6 +16,7 @@ import cecs429.documents.DocumentCorpus;
 import cecs429.documents.Snippet;
 import cecs429.index.Index;
 import cecs429.index.PositionalInvertedIndex;
+import cecs429.index.DiskIndexWriter;
 import cecs429.index.Posting;
 import cecs429.query.BooleanQueryParser;
 import cecs429.query.QueryComponent;
@@ -33,6 +34,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
+import java.io.File;
 
 import javax.swing.JFileChooser;
 import java.awt.event.KeyAdapter;
@@ -62,6 +64,7 @@ public class gui {
 	
 	DocumentCorpus corpus;
 	Index index;
+	DiskIndexWriter diskIndexWriter = new DiskIndexWriter();
 	TokenProcessor processor = new DefaultTokenProcessor();
 	BooleanQueryParser queryParser = new BooleanQueryParser();
 	
@@ -280,6 +283,7 @@ public class gui {
 
 							long start = System.currentTimeMillis();
 							index = indexCorpus(corpus, processor);
+							diskIndexWriter.writeIndex(index, corpus, Paths.get(fileChooser.getSelectedFile().getAbsolutePath(), "disk"));
 							long end = System.currentTimeMillis();
 							indexIndicator.setText("Indexed: " + ((end - start) / 1000) + " seconds.");
 							// Check if search button was disabled, to enable it

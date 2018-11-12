@@ -8,6 +8,7 @@ import cecs429.index.DiskIndexWriter;
 import cecs429.index.DiskPositionalIndex;
 import cecs429.index.Index;
 import cecs429.index.PositionalInvertedIndex;
+import cecs429.index.DiskIndexWriter;
 import cecs429.index.Posting;
 import cecs429.query.BooleanQueryParser;
 import cecs429.query.QueryComponent;
@@ -26,7 +27,7 @@ public class PositionalInvertedIndexer {
 	public static void main(String[] args) {
 		Scanner sc = new Scanner(System.in);	
 		String query = null;
-		Path corpusPath = null;
+		Path corpusPath = null;                
 
 		System.out.print("Please enter the name of a directory you would like to index: ");
 		corpusPath = Paths.get(sc.nextLine()).toAbsolutePath().normalize();
@@ -58,7 +59,7 @@ public class PositionalInvertedIndexer {
 
 		sc.close();
 		System.exit(0);
-
+                
 		// while(true) {
 		// 	System.out.println("\nSpecial queries available:");
 		// 	System.out.println(":q - To quit application");
