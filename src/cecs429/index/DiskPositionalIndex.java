@@ -13,7 +13,7 @@ import java.util.*;
  */
 public class DiskPositionalIndex implements Index {
 	private RandomAccessFile mPostings;
-	private RandomAccessFile mDocWeights;
+	private static RandomAccessFile mDocWeights;
 	private BIndexFile mBt;
 
 	public DiskPositionalIndex(Path absolutePath) throws Exception {
@@ -72,7 +72,7 @@ public class DiskPositionalIndex implements Index {
 		return null;
 	}
 
-	public double getDocWeight(int docId) throws IOException {
+	public static double getDocWeight(int docId) throws IOException {
 		mDocWeights.seek(docId * 8);
 		return mDocWeights.readDouble();
 	}
