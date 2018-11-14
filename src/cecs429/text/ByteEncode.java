@@ -2,7 +2,7 @@ package cecs429.text;
 
 import java.util.*;
 
-public class ByteEncore {
+public class ByteEncode {
 
     public static byte[] numberToByteArray(int n) {
         List bytes = new ArrayList<Byte>();
@@ -27,7 +27,7 @@ public class ByteEncore {
     }
 
     public static int byteArrayToInt(byte[] bytes) {
-        
+        return 0;
     }
 
 }

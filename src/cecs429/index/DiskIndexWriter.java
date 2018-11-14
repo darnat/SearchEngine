@@ -1,6 +1,7 @@
 package cecs429.index;
 
 import cecs429.index.Index;
+import cecs429.text.ByteEncode;
 import libs.btree4j.*;
 
 import java.io.*;
@@ -33,17 +34,21 @@ public class DiskIndexWriter {
 				List<Posting> postings = idx.getPostings(term);
 
 				pos.add(out.size()); // Save byte position
-				out.writeInt(postings.size()); // df(t) - # of docs containing term
+				writeOn(out, postings.size());
+				// out.writeInt(postings.size()); // df(t) - # of docs containing term
 				for (Posting p : postings) {
 					posGap = 0;
-					out.writeInt(p.getDocumentId() - docIdGap); // docId containing term utilizing gaps
+					writeOn(out, p.getDocumentId() - docIdGap);
+					// out.writeInt(p.getDocumentId() - docIdGap); // docId containing term utilizing gaps
 					docIdGap = p.getDocumentId();
 
 					List<Integer> positions = p.getPositions();
-					out.writeInt(positions.size()); // tf(td) - # of times term occurs in doc
+					writeOn(out, positions.size());
+					// out.writeInt(positions.size()); // tf(td) - # of times term occurs in doc
 
 					for (Integer i : positions) {
-						out.writeInt(i - posGap); // p(t) - ith position of term in doc utilizing gaps
+						writeOn(out, i - posGap);
+						// out.writeInt(i - posGap); // p(t) - ith position of term in doc utilizing gaps
 						posGap = i;
 					}
 				}
@@ -51,6 +56,13 @@ public class DiskIndexWriter {
 
 			return pos;
 		}
+	}
+
+	private void writeOn(DataOutputStream out, int n) throws IOException {
+		byte[] tmp;
+
+		tmp = ByteEncode.numberToByteArray(n);
+		out.write(tmp, 0, tmp.length);
 	}
 
 	private void createBPlusTreeIndex(File file, List<String> vocab, List<Integer> postings) throws BTreeException {
