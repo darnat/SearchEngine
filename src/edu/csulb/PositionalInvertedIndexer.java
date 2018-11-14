@@ -12,6 +12,7 @@ import cecs429.index.DiskIndexWriter;
 import cecs429.index.Posting;
 import cecs429.query.BooleanQueryParser;
 import cecs429.query.QueryComponent;
+import cecs429.query.RankedRetrieval;
 import cecs429.text.DefaultTokenProcessor;
 import cecs429.text.EnglishTokenStream;
 import cecs429.text.Stemmer;
@@ -23,8 +24,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class PositionalInvertedIndexer {
-	public static void main(String[] args) {
+public class PositionalInvertedIndexer { 
+	public static void main(String[] args) throws IOException, Exception {
 		Scanner sc = new Scanner(System.in);	
 		String query = null;
 		Path corpusPath = null;                
@@ -40,25 +41,59 @@ public class PositionalInvertedIndexer {
 		indexCorpus(corpus, processor, corpusPath.resolve("index"));
 		long end = System.currentTimeMillis();
 		System.out.println("Indexing completed in " + ((end - start) / 1000) + " seconds.");
+                
+                DiskPositionalIndex dpi = new DiskPositionalIndex(corpusPath.resolve("index"));
 
-		// Testing
-		try {
-			DiskPositionalIndex dpi = new DiskPositionalIndex(corpusPath.resolve("index"));
-			List<Posting> postings = dpi.getPostings("park"); // Sample query word
-			
-			for (Posting p : postings) {
-				System.out.println(p);
-			}
+                System.out.println("\n\n\033[1m-----Ranked Retrieval Mode-----\033[0m");
+                System.out.println(":q - To quit application");
+                     
+                Map<Integer, Double> accumulator;
+                List<Map.Entry<Integer, Double>> results;
+    
+                while(true) {
+                    System.out.print("\nPlease enter your search query: ");
+                    query = sc.nextLine();
 
-			System.out.println("Fetched Ld: " + dpi.getDocWeight(9));
+                    if (query.equals(":q"))
+                        break;
 
-			dpi.closeFiles();
-		} catch(Exception ex) {
-			System.out.println(ex.getMessage());
-		}
+                    accumulator = RankedRetrieval.accumulate(dpi, corpus, query);
+                    results = RankedRetrieval.getResults(accumulator);
+                    printResult(corpus, results);
+                                                                    
+                    System.out.println("Number of documents: " + results.size());
+                    System.out.print("\nDo you wish to select a document to view (y, n)? ");
+                    String docRequested = sc.nextLine();
 
-		sc.close();
-		System.exit(0);
+                    if (docRequested.toLowerCase().equals("y")) {
+                        System.out.print("Please enter a list number from the list above: ");
+                        int listNum = sc.nextInt();
+                        int docId = results.get(--listNum).getKey();
+                        BufferedReader in = new BufferedReader(corpus.getDocument(docId).getContent());
+                        String line = null;
+
+                        try {
+                                while ((line = in.readLine()) != null) {
+                                        System.out.println(line);
+                                }
+                        } catch(IOException ex) {
+                                System.out.println("Error reading document.");
+                        }
+                        // Flush the buffer
+                        sc.nextLine();
+                    }
+                    else {
+                        System.out.println("Term was not found.");
+                    }
+                    
+                    accumulator = null;
+                    results = null;
+                }
+                
+            dpi.closeFiles();
+            sc.close();
+            System.exit(0);
+        }
                 
 		// while(true) {
 		// 	System.out.println("\nSpecial queries available:");
@@ -134,7 +169,6 @@ public class PositionalInvertedIndexer {
 
 		// sc.close();
 		// System.exit(0);
-	}
 	
 	private static void indexCorpus(DocumentCorpus corpus, TokenProcessor processor, Path absolutePath) {
 		Iterable<Document> documents = corpus.getDocuments();
@@ -180,4 +214,12 @@ public class PositionalInvertedIndexer {
 			System.out.println("Error creating disk-based index: " + ex.getMessage());
 		}
 	}
+        
+        private static void printResult(DocumentCorpus corpus, List<Map.Entry<Integer, Double>> results) {
+            for (int i = 0; i < results.size(); ++i) {
+                System.out.print((i + 1) + ". \033[1mDocument\033[0m \"");
+                System.out.print(corpus.getDocument(results.get(i).getKey()).getTitle());
+                System.out.println("\" (ID " + results.get(i).getKey() + "): " + results.get(i).getValue());
+            }
+        }
 }
