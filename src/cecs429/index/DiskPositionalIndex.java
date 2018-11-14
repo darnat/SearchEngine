@@ -58,9 +58,11 @@ public class DiskPositionalIndex implements Index {
 				postings.add(posting);
 			}
 		} catch (Exception ex) {
-			for (StackTraceElement e : ex.getStackTrace()) {
-				System.out.println(e);
-			}
+			// B+ tree crashes when term not found with NullPointerException :/
+			// for (StackTraceElement e : ex.getStackTrace()) {
+			// 	System.out.println(e);
+			// }
+			System.out.println("Term was not found in corpus...");
 		}
 
 		return postings;
@@ -79,6 +81,7 @@ public class DiskPositionalIndex implements Index {
 
 	public void closeFiles() throws Exception {
 		mPostings.close();
+		mDocWeights.close();
 		mBt.close();
 	}
 }
