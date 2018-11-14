@@ -1,5 +1,6 @@
 **/*.class
 **/*.json
+**/*.bin
 .classpath
 .project
 CMakeCache.txt
@@ -16,5 +17,6 @@ dummy/*
 build.xml
 manifest.mf
 build/
-corpus/
+corpus/*
+corpus_small/*
 nbproject/
