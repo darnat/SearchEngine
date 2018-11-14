@@ -72,6 +72,7 @@ public class DiskIndexWriter {
 		byte[] tmp;
 
 		tmp = ByteEncode.numberToByteArray(n);
+		// tmp = toBytes(n);
 		for (byte b : tmp) {
 			bytes.add(b);
 		}

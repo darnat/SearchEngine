@@ -77,9 +77,10 @@ public class DiskPositionalIndex implements Index {
 		// return mPostings.readInt();
 		int n = 0;
 		byte b;
+		// System.out.println("Number : ");
 		for (;;) {
 			b = mPostings.readByte();
-			// System.out.println("Byte : " + String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
+			// System.out.print("Byte : " + String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0') + " ");
 			if ((b & 0xFF) < 128) {
 				n = 128 * n + (b & 0xFF);
 			} else {
