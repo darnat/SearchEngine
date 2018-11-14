@@ -21,6 +21,7 @@ public class DiskIndexWriter {
 
 	private List<Integer> createPostings(File file, Index idx, List<String> vocab) throws IOException {
 		List<Integer> pos = new ArrayList<>();
+		List<Byte> bytes = new ArrayList<>();
 		int docIdGap;
 		int posGap;
 
@@ -30,35 +31,51 @@ public class DiskIndexWriter {
 				List<Posting> postings = idx.getPostings(term);
 
 				pos.add(out.size()); // Save byte position
-				writeOn(out, postings.size());
+				writeOn(out, postings.size(), bytes);
 				// out.writeInt(postings.size()); // df(t) - # of docs containing term
 				for (Posting p : postings) {
 					posGap = 0;
-					writeOn(out, p.getDocumentId() - docIdGap);
+					writeOn(out, p.getDocumentId() - docIdGap, bytes);
 					// out.writeInt(p.getDocumentId() - docIdGap); // docId containing term utilizing gaps
 					docIdGap = p.getDocumentId();
 
 					List<Integer> positions = p.getPositions();
-					writeOn(out, positions.size());
+					writeOn(out, positions.size(), bytes);
 					// out.writeInt(positions.size()); // tf(td) - # of times term occurs in doc
 
 					for (Integer i : positions) {
-						writeOn(out, i - posGap);
+						writeOn(out, i - posGap, bytes);
 						// out.writeInt(i - posGap); // p(t) - ith position of term in doc utilizing gaps
 						posGap = i;
 					}
 				}
 			}
 
+			out.write(toPrimitiveByte(bytes), 0, bytes.size());
+
 			return pos;
 		}
 	}
 
-	private void writeOn(DataOutputStream out, int n) throws IOException {
+	private byte[] toPrimitiveByte(List<Byte> bytes) {
+		byte[] finalBytes = new byte[bytes.size()];
+
+		for (int i = 0; i < bytes.size(); ++i) {
+			finalBytes[i] = (byte)bytes.get(i);
+		}
+		return finalBytes;
+	}
+
+	private void writeOn(DataOutputStream out, int n, List<Byte> bytes) throws IOException {
 		byte[] tmp;
 
 		tmp = ByteEncode.numberToByteArray(n);
-		out.write(tmp, 0, tmp.length);
+		// tmp = toBytes(n);
+		for (byte b : tmp) {
+			bytes.add(b);
+		}
+		// out.write(tmp, 0, tmp.length);
+		// out.writeInt(n);
 	}
 
 	private void createBPlusTreeIndex(File file, List<String> vocab, List<Integer> postings) throws BTreeException, IOException {
