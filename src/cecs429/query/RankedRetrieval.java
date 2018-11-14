@@ -36,14 +36,16 @@ public class RankedRetrieval {
         Map<Integer, Double> accumulator = new HashMap<>();
 
         getTokens(query).forEach((token) -> {
+            List<Posting> postings = index.getPostings(token);
+            
             //Calculate w(q,t) 
             double wQT = 0.0, accu = 0.0, wDT = 0.0;
             
-            if (!index.getPostings(token).isEmpty()) {
-                wQT = Math.log(1.0 + ((double) corpusSize / (double) index.getPostings(token).size()));
+            if (!postings.isEmpty()) {
+                wQT = Math.log(1.0 + ((double) corpusSize / (double) postings.size()));
             }
  
-            for (Posting p : index.getPostings(token)) {
+            for (Posting p : postings) {
                 //Never encountered, add and initialize
                 if (!accumulator.containsKey(p.getDocumentId())) 
                     accumulator.put(p.getDocumentId(), 0.0);
