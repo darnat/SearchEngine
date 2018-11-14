@@ -24,77 +24,167 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class PositionalInvertedIndexer { 
+public class PositionalInvertedIndexer {
 	public static void main(String[] args) throws IOException, Exception {
 		Scanner sc = new Scanner(System.in);	
-		String query = null;
-		Path corpusPath = null;                
+		String res = null;
+		CorpusInfo corpusInfo = null;
 
+		while(true) {
+			System.out.println(":q - To quit application");
+			System.out.println("1. Build index.");
+			System.out.println("2. Query index.");
+			System.out.print("\n\nPlease make a selection: ");
+			res = sc.nextLine();
+
+			if (res.equals(":q")) {
+				break;
+			} else if (res.startsWith("1")) {
+				corpusInfo = buildIndex(sc);
+			} else if (res.startsWith("2")) {
+				if (corpusInfo != null) {
+					queryIndex(sc, corpusInfo);
+				} else {
+					System.out.println("Please build an index first before trying to query it.");
+				}
+			}
+		}
+		
+		sc.close();
+		System.exit(0);
+	}
+
+	private static CorpusInfo buildIndex(Scanner sc) {
 		System.out.print("Please enter the name of a directory you would like to index: ");
-		corpusPath = Paths.get(sc.nextLine()).toAbsolutePath().normalize();
+		Path corpusPath = Paths.get(sc.nextLine()).toAbsolutePath().normalize();
 		DocumentCorpus corpus = DirectoryCorpus.loadJsonDirectory(corpusPath, ".json");
 		TokenProcessor processor = new DefaultTokenProcessor();
-		BooleanQueryParser queryParser = new BooleanQueryParser();
 
 		System.out.println("\nIndexing in progress...");
 		long start = System.currentTimeMillis();
 		indexCorpus(corpus, processor, corpusPath.resolve("index"));
 		long end = System.currentTimeMillis();
 		System.out.println("Indexing completed in " + ((end - start) / 1000) + " seconds.");
-                
-                DiskPositionalIndex dpi = new DiskPositionalIndex(corpusPath.resolve("index"));
 
-                System.out.println("\n\n\033[1m-----Ranked Retrieval Mode-----\033[0m");
-                System.out.println(":q - To quit application");
-                     
-                Map<Integer, Double> accumulator;
-                List<Map.Entry<Integer, Double>> results;
-    
-                while(true) {
-                    System.out.print("\nPlease enter your search query: ");
-                    query = sc.nextLine();
+		return new CorpusInfo(corpusPath, corpus);
+	}
 
-                    if (query.equals(":q"))
-                        break;
+	private static void queryIndex(Scanner sc, CorpusInfo corpusInfo) {
+		DocumentCorpus corpus = corpusInfo.getCorpus();
 
-                    accumulator = RankedRetrieval.accumulate(dpi, corpus, query);
-                    results = RankedRetrieval.getResults(accumulator);
-                    printResult(corpus, results);
-                                                                    
-                    System.out.println("Number of documents: " + results.size());
-                    System.out.print("\nDo you wish to select a document to view (y, n)? ");
-                    String docRequested = sc.nextLine();
+		try {
+			DiskPositionalIndex dpi = new DiskPositionalIndex(corpusInfo.getCorpusPath().resolve("index"));
+			String query = null;
 
-                    if (docRequested.toLowerCase().equals("y")) {
-                        System.out.print("Please enter a list number from the list above: ");
-                        int listNum = sc.nextInt();
-                        int docId = results.get(--listNum).getKey();
-                        BufferedReader in = new BufferedReader(corpus.getDocument(docId).getContent());
-                        String line = null;
+			System.out.println("\n\n-----Ranked Retrieval Mode-----");
+			System.out.println(":q - To quit application");
+					
+			Map<Integer, Double> accumulator;
+			List<Map.Entry<Integer, Double>> results;
 
-                        try {
-                                while ((line = in.readLine()) != null) {
-                                        System.out.println(line);
-                                }
-                        } catch(IOException ex) {
-                                System.out.println("Error reading document.");
-                        }
-                        // Flush the buffer
-                        sc.nextLine();
-                    }
-                    else {
-                        System.out.println("Term was not found.");
-                    }
-                    
-                    accumulator = null;
-                    results = null;
-                }
-                
-            dpi.closeFiles();
-            sc.close();
-            System.exit(0);
-        }
-                
+			while(true) {
+				System.out.print("\nPlease enter your search query: ");
+				query = sc.nextLine();
+
+				if (query.equals(":q")) {
+					break;
+				}
+
+				accumulator = RankedRetrieval.accumulate(dpi, corpus.getCorpusSize(), query);
+				results = RankedRetrieval.getResults(accumulator);
+				printResult(corpus, results);
+																
+				System.out.println("Number of documents: " + results.size());
+				System.out.print("\nDo you wish to select a document to view (y, n)? ");
+				String docRequested = sc.nextLine();
+
+				if (docRequested.toLowerCase().equals("y")) {
+					System.out.print("Please enter a list number from the list above: ");
+					int listNum = sc.nextInt();
+					int docId = results.get(--listNum).getKey();
+					BufferedReader in = new BufferedReader(corpus.getDocument(docId).getContent());
+					String line = null;
+
+					try {
+						while ((line = in.readLine()) != null) {
+							System.out.println(line);
+						}
+					} catch(IOException ex) {
+						System.out.println("Error reading document.");
+					}
+					// Flush the buffer
+					sc.nextLine();
+				}
+				else {
+					System.out.println("Term was not found.");
+				}
+				
+				accumulator = null;
+				results = null;
+			}
+			
+			dpi.closeFiles();
+		} catch (Exception ex) {
+			System.out.println("Error querying disk index...");
+			for (StackTraceElement e : ex.getStackTrace()) {
+				System.out.println(e);
+			}
+		}
+	}
+	
+	private static void indexCorpus(DocumentCorpus corpus, TokenProcessor processor, Path absolutePath) {
+		Iterable<Document> documents = corpus.getDocuments();
+		PositionalInvertedIndex index = new PositionalInvertedIndex();
+		DiskIndexWriter diw = new DiskIndexWriter();
+		Map<Integer, Map<String, Integer>> docWeightList = new HashMap<>();
+
+		for (Document doc : documents) {
+			int position = 0;
+			Iterable<String> tokens = new EnglishTokenStream(doc.getContent()).getTokens();
+			for (String token : tokens) {
+				List<String> terms = processor.processToken(token);
+				for (String term : terms) {
+					index.addTerm(term, doc.getId(), position);
+					
+					// For document weight calculations
+					if (docWeightList.containsKey(doc.getId())) {
+						Map<String, Integer> docWeights = docWeightList.get(doc.getId());
+
+						if (docWeights.containsKey(term)) {
+							docWeights.put(term, docWeights.get(term) + 1); // increment term frequency
+						} else {
+							docWeights.put(term, 1);
+						}
+					} else {
+						Map<String, Integer> weight = new HashMap<String, Integer>();
+						weight.put(term, 1);
+						docWeightList.put(doc.getId(), weight);
+					}
+				}
+				position++;
+			}
+		}
+
+		try {
+			// Save disk-based index
+			diw.writeIndex(absolutePath, index);
+
+			// Save document weights
+			diw.createDocumentWeights(absolutePath, docWeightList);
+
+		} catch (Exception ex) {
+			System.out.println("Error creating disk-based index: " + ex.getMessage());
+		}
+	}
+        
+	private static void printResult(DocumentCorpus corpus, List<Map.Entry<Integer, Double>> results) {
+		for (int i = 0; i < results.size(); ++i) {
+			System.out.print((i + 1) + ". " + corpus.getDocument(results.get(i).getKey()).getTitle());
+			System.out.println("\" (ID " + results.get(i).getKey() + "): " + results.get(i).getValue());
+		}
+	}
+
+	private static void milestone1() {
 		// while(true) {
 		// 	System.out.println("\nSpecial queries available:");
 		// 	System.out.println(":q - To quit application");
@@ -166,60 +256,23 @@ public class PositionalInvertedIndexer {
 		// 		}
 		// 	}
 		// }
+	}
 
-		// sc.close();
-		// System.exit(0);
-	
-	private static void indexCorpus(DocumentCorpus corpus, TokenProcessor processor, Path absolutePath) {
-		Iterable<Document> documents = corpus.getDocuments();
-		PositionalInvertedIndex index = new PositionalInvertedIndex();
-		DiskIndexWriter diw = new DiskIndexWriter();
-		Map<Integer, Map<String, Integer>> docWeightList = new HashMap<>();
+	private static class CorpusInfo {
+		private Path mCorpusPath;
+		private DocumentCorpus mCorpus;
 
-		for (Document doc : documents) {
-			int position = 0;
-			Iterable<String> tokens = new EnglishTokenStream(doc.getContent()).getTokens();
-			for (String token : tokens) {
-				List<String> terms = processor.processToken(token);
-				for (String term : terms) {
-					index.addTerm(term, doc.getId(), position);
-					
-					// For document weight calculations
-					if (docWeightList.containsKey(doc.getId())) {
-						Map<String, Integer> docWeights = docWeightList.get(doc.getId());
-
-						if (docWeights.containsKey(term)) {
-							docWeights.put(term, docWeights.get(term) + 1); // increment term frequency
-						} else {
-							docWeights.put(term, 1);
-						}
-					} else {
-						Map<String, Integer> weight = new HashMap<String, Integer>();
-						weight.put(term, 1);
-						docWeightList.put(doc.getId(), weight);
-					}
-				}
-				position++;
-			}
+		public CorpusInfo(Path corpusPath, DocumentCorpus corpus) {
+			mCorpusPath = corpusPath;
+			mCorpus = corpus;
 		}
 
-		try {
-			// Save disk-based index
-			diw.writeIndex(absolutePath, index);
+		public Path getCorpusPath() {
+			return mCorpusPath;
+		}
 
-			// Save document weights
-			diw.createDocumentWeights(absolutePath, docWeightList);
-
-		} catch (Exception ex) {
-			System.out.println("Error creating disk-based index: " + ex.getMessage());
+		public DocumentCorpus getCorpus() {
+			return mCorpus;
 		}
 	}
-        
-        private static void printResult(DocumentCorpus corpus, List<Map.Entry<Integer, Double>> results) {
-            for (int i = 0; i < results.size(); ++i) {
-                System.out.print((i + 1) + ". \033[1mDocument\033[0m \"");
-                System.out.print(corpus.getDocument(results.get(i).getKey()).getTitle());
-                System.out.println("\" (ID " + results.get(i).getKey() + "): " + results.get(i).getValue());
-            }
-        }
 }

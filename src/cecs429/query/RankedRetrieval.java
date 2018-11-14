@@ -32,15 +32,16 @@ public class RankedRetrieval {
      * @return   
      * @throws java.io.IOException 
      */
-    public static Map<Integer, Double> accumulate(Index index, DocumentCorpus corpus, String query) throws IOException {
+    public static Map<Integer, Double> accumulate(Index index, int corpusSize, String query) throws IOException {
         Map<Integer, Double> accumulator = new HashMap<>();
 
         getTokens(query).forEach((token) -> {
             //Calculate w(q,t) 
             double wQT = 0.0, accu = 0.0, wDT = 0.0;
             
-            if (!index.getPostings(token).isEmpty()) 
-                wQT = Math.log(1.0 + ((double)corpus.getCorpusSize() / (double)index.getPostings(token).size()));
+            if (!index.getPostings(token).isEmpty()) {
+                wQT = Math.log(1.0 + ((double) corpusSize / (double) index.getPostings(token).size()));
+            }
  
             for (Posting p : index.getPostings(token)) {
                 //Never encountered, add and initialize
@@ -59,9 +60,10 @@ public class RankedRetrieval {
         
         // Divide all A(d) by L(d)
         for (Integer key : accumulator.keySet()) {
-            if (accumulator.get(key) != 0.0)
+            if (accumulator.get(key) != 0.0) {
                 // Accumulator = Acculmulator / L(d)
-                accumulator.replace(key, (double)accumulator.get(key) / (double)DiskPositionalIndex.getDocWeight(key));
+                accumulator.replace(key, (double) accumulator.get(key) / (double) DiskPositionalIndex.getDocWeight(key));
+            }
         }
         
         return accumulator;  
@@ -84,15 +86,23 @@ public class RankedRetrieval {
             greatest.add(entry); //Indiscriminately insert
         });
 
-        for (int i = 0; i < k; ++i)
-            results.add(greatest.poll()); //retrieve and pop head
+        for (int i = 0; i < k; ++i) {
+            if (greatest.peek() != null) {
+                results.add(greatest.poll()); //retrieve and pop head
+            }
+        }
         
         return results;
     }
     
     private static List<String> getTokens(String query) {
+        List<String> tokenList = new ArrayList<String>();
         TokenProcessor processor = new DefaultTokenProcessor();
-        return Arrays.asList(processor.processToken(query).get(0).split(mRegex));
+        String[] tokens = query.split(mRegex);
+        for (String token : tokens) {
+            tokenList.addAll(processor.processToken(token));
+        }
+        return tokenList;
     }
     
     public static List<Entry<Integer, Double>> getResults(Map<Integer, Double> accumulator) {
