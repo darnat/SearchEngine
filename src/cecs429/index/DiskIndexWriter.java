@@ -22,6 +22,7 @@ public class DiskIndexWriter {
 	private List<Integer> createPostings(File file, Index idx, List<String> vocab) throws IOException {
 		List<Integer> pos = new ArrayList<>();
 		List<Byte> bytes = new ArrayList<>();
+		int written = 0;
 		int docIdGap;
 		int posGap;
 
@@ -30,21 +31,22 @@ public class DiskIndexWriter {
 				docIdGap = 0;
 				List<Posting> postings = idx.getPostings(term);
 
-				pos.add(out.size()); // Save byte position
-				writeOn(out, postings.size(), bytes);
+				// pos.add(out.size()); // Save byte position
+				pos.add(written); // Save byte position
+				written += writeOn(out, postings.size(), bytes);
 				// out.writeInt(postings.size()); // df(t) - # of docs containing term
 				for (Posting p : postings) {
 					posGap = 0;
-					writeOn(out, p.getDocumentId() - docIdGap, bytes);
+					written += writeOn(out, p.getDocumentId() - docIdGap, bytes);
 					// out.writeInt(p.getDocumentId() - docIdGap); // docId containing term utilizing gaps
 					docIdGap = p.getDocumentId();
 
 					List<Integer> positions = p.getPositions();
-					writeOn(out, positions.size(), bytes);
+					written += writeOn(out, positions.size(), bytes);
 					// out.writeInt(positions.size()); // tf(td) - # of times term occurs in doc
 
 					for (Integer i : positions) {
-						writeOn(out, i - posGap, bytes);
+						written += writeOn(out, i - posGap, bytes);
 						// out.writeInt(i - posGap); // p(t) - ith position of term in doc utilizing gaps
 						posGap = i;
 					}
@@ -66,14 +68,14 @@ public class DiskIndexWriter {
 		return finalBytes;
 	}
 
-	private void writeOn(DataOutputStream out, int n, List<Byte> bytes) throws IOException {
+	private int writeOn(DataOutputStream out, int n, List<Byte> bytes) throws IOException {
 		byte[] tmp;
 
 		tmp = ByteEncode.numberToByteArray(n);
-		// tmp = toBytes(n);
 		for (byte b : tmp) {
 			bytes.add(b);
 		}
+		return tmp.length;
 		// out.write(tmp, 0, tmp.length);
 		// out.writeInt(n);
 	}

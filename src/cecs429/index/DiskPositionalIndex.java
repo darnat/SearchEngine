@@ -74,6 +74,7 @@ public class DiskPositionalIndex implements Index {
 	}
 
 	private int nextInt() throws Exception {
+		// return mPostings.readInt();
 		int n = 0;
 		byte b;
 		for (;;) {
