@@ -17,94 +17,85 @@ import java.util.Map.Entry;
 import java.util.PriorityQueue;
 
 public class RankedRetrieval {
-    private static Map<Integer, Double> accumulator;
-    private static List<Entry<Integer, Double>> results;
-    private static List<String> mQueryTokens;
-    
     /* Regex split query into tokens */
-    private String mRegex;
+    private static String mRegex;
         
-    public RankedRetrieval() {
+    static {
         mRegex = "\\s+"; //one or more whitespace
-        accumulator = new HashMap<>();
-        results = new ArrayList<>();
-    }
-    
-    public void printResults(DocumentCorpus corpus) {
-        for (int i = 0; i < results.size(); ++i) 
-            System.out.println(10 - i + ". \033[1mTitle: \033[0m" + corpus.getDocument(results.get(i).getKey()).getTitle()
-            + "\033[1m\n   Accumulator: \033[0m" + results.get(i).getValue());
-    }
-    
-    public  List<Entry<Integer, Double>> getResults() {
-        return results;
     }
     
     /** 
      * Will return a Map<DocID, Score> which correspond to the most relevant document 
      * @param index
      * @param corpus 
-     * @param query 
+     * @param query  
+     * @return   
      * @throws java.io.IOException 
      */
-    public void getMostRelevant(Index index, DocumentCorpus corpus, String query) throws IOException {
-        mQueryTokens = getTokens(query);
-        results.clear();
-        
-        for (String token : mQueryTokens) {
+    public static Map<Integer, Double> accumulate(Index index, DocumentCorpus corpus, String query) throws IOException {
+        Map<Integer, Double> accumulator = new HashMap<>();
+
+        getTokens(query).forEach((token) -> {
             //Calculate w(q,t) 
-            double weightQT = 0.0;
+            double wQT = 0.0, accu = 0.0, wDT = 0.0;
             
-            if (!index.getPostings(token).isEmpty()) {
-                weightQT = Math.log(1 + (corpus.getCorpusSize() / index.getPostings(token).size()));
-            }
-            
+            if (!index.getPostings(token).isEmpty()) 
+                wQT = Math.log(1.0 + ((double)corpus.getCorpusSize() / (double)index.getPostings(token).size()));
+ 
             for (Posting p : index.getPostings(token)) {
-                if (!accumulator.containsKey(p.getDocumentId())) //Never encountered
+                //Never encountered, add and initialize
+                if (!accumulator.containsKey(p.getDocumentId())) 
                     accumulator.put(p.getDocumentId(), 0.0);
-
-                double accu = accumulator.get(p.getDocumentId());
-
-                //calculate weight of doc = 1 + ln(tf(t,d)) //term frequency
-                double weightOfDoc = 1.0 + Math.log(p.getPositions().size());
-
-                accumulator.replace(p.getDocumentId(), accu + (weightQT * weightOfDoc));
+                
+                //calculate weight of doc = 1 + ln(tf(t,d)) 
+                wDT = 1.0 + Math.log((double)p.getPositions().size());
+                
+                //acquire A(d)
+                accu = accumulator.get(p.getDocumentId()); 
+                
+                accumulator.replace(p.getDocumentId(), accu + (wQT * wDT));
             }
-
-        }
+        });
         
+        // Divide all A(d) by L(d)
         for (Integer key : accumulator.keySet()) {
             if (accumulator.get(key) != 0.0)
-               accumulator.put(key, accumulator.get(key) / DiskPositionalIndex.getDocWeight(key));
+                // Accumulator = Acculmulator / L(d)
+                accumulator.replace(key, (double)accumulator.get(key) / (double)DiskPositionalIndex.getDocWeight(key));
         }
         
-        findNGreatest(accumulator, 10);
+        return accumulator;  
     }
     
-    private void findNGreatest(Map<Integer, Double> map, int n)
+    private static List<Entry<Integer, Double>> findKGreatest(Map<Integer, Double> map, int k)
     {
+        List<Entry<Integer, Double>> results = new ArrayList<>();
+        
+        // For comparison for "sorting" the priority queue
         Comparator<? super Entry<Integer, Double>> comparator = 
-            (Entry<Integer, Double> e0, Entry<Integer, Double> e1) -> {
-                Double v0 = e0.getValue();
-                Double v1 = e1.getValue();
-                return v0.compareTo(v1);
+            (Entry<Integer, Double> val1, Entry<Integer, Double> val2) -> {
+                return val2.getValue().compareTo(val1.getValue());
         };
         
-        PriorityQueue<Entry<Integer, Double>> highest = new PriorityQueue<>(n, comparator);
+        PriorityQueue<Entry<Integer, Double>> greatest = new PriorityQueue<>(k, comparator);
         
-        for (Entry<Integer, Double> entry : map.entrySet()) {
-            highest.offer(entry);
-            
-            while (highest.size() > n)
-                highest.poll();
-        }
+        //Build Priority Queue based on entries
+        map.entrySet().forEach((entry) -> {
+            greatest.add(entry); //Indiscriminately insert
+        });
 
-        while (highest.size() > 0)
-            results.add(highest.poll());
+        for (int i = 0; i < k; ++i)
+            results.add(greatest.poll()); //retrieve and pop head
+        
+        return results;
     }
     
-    public List<String> getTokens(String query) {
+    private static List<String> getTokens(String query) {
         TokenProcessor processor = new DefaultTokenProcessor();
         return Arrays.asList(processor.processToken(query).get(0).split(mRegex));
+    }
+    
+    public static List<Entry<Integer, Double>> getResults(Map<Integer, Double> accumulator) {
+        return findKGreatest(accumulator, 10);
     }
 }
