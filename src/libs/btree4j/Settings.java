@@ -38,7 +38,6 @@ public final class Settings {
     static {
         properties = new Properties();
         final String userDir = System.getProperty("user.dir");
-        System.out.println(userDir);
         try {
             // put default settings.
             // InputStream is = Settings.class.getResourceAsStream(PROPERTY_FILE_NAME);
