@@ -8,7 +8,7 @@ public class ByteEncode {
         List bytes = new ArrayList<Byte>();
         byte[] rBytes;
         for (;;) {
-            bytes.add((byte)(n % 128));
+            bytes.add(0, (byte)(n % 128));
             if (n < 128)
                 break;
             n /= 128;

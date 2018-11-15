@@ -1,7 +1,7 @@
 package cecs429.index;
 
 import cecs429.index.Index;
-
+import cecs429.text.ByteEncode;
 import libs.btree4j.*;
 
 import java.io.*;
@@ -21,33 +21,64 @@ public class DiskIndexWriter {
 
 	private List<Integer> createPostings(File file, Index idx, List<String> vocab) throws IOException {
 		List<Integer> pos = new ArrayList<>();
+		List<Byte> bytes = new ArrayList<>();
+		int written = 0;
 		int docIdGap;
 		int posGap;
 
-		try (DataOutputStream out = new DataOutputStream(new FileOutputStream(file))) {
+		try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
 			for (String term : vocab) {
 				docIdGap = 0;
 				List<Posting> postings = idx.getPostings(term);
 
-				pos.add(out.size()); // Save byte position
-				out.writeInt(postings.size()); // df(t) - # of docs containing term
+				// pos.add(out.size()); // Save byte position
+				pos.add(written); // Save byte position
+				written += writeOn(out, postings.size(), bytes);
+				// out.writeInt(postings.size()); // df(t) - # of docs containing term
 				for (Posting p : postings) {
 					posGap = 0;
-					out.writeInt(p.getDocumentId() - docIdGap); // docId containing term utilizing gaps
+					written += writeOn(out, p.getDocumentId() - docIdGap, bytes);
+					// out.writeInt(p.getDocumentId() - docIdGap); // docId containing term utilizing gaps
 					docIdGap = p.getDocumentId();
 
 					List<Integer> positions = p.getPositions();
-					out.writeInt(positions.size()); // tf(td) - # of times term occurs in doc
+					written += writeOn(out, positions.size(), bytes);
+					// out.writeInt(positions.size()); // tf(td) - # of times term occurs in doc
 
 					for (Integer i : positions) {
-						out.writeInt(i - posGap); // p(t) - ith position of term in doc utilizing gaps
+						written += writeOn(out, i - posGap, bytes);
+						// out.writeInt(i - posGap); // p(t) - ith position of term in doc utilizing gaps
 						posGap = i;
 					}
 				}
 			}
 
+			out.write(toPrimitiveByte(bytes), 0, bytes.size());
+
 			return pos;
 		}
+	}
+
+	private byte[] toPrimitiveByte(List<Byte> bytes) {
+		byte[] finalBytes = new byte[bytes.size()];
+
+		for (int i = 0; i < bytes.size(); ++i) {
+			finalBytes[i] = (byte)bytes.get(i);
+		}
+		return finalBytes;
+	}
+
+	private int writeOn(DataOutputStream out, int n, List<Byte> bytes) throws IOException {
+		byte[] tmp;
+
+		tmp = ByteEncode.numberToByteArray(n);
+		// tmp = toBytes(n);
+		for (byte b : tmp) {
+			bytes.add(b);
+		}
+		return tmp.length;
+		// out.write(tmp, 0, tmp.length);
+		// out.writeInt(n);
 	}
 
 	private void createBPlusTreeIndex(File file, List<String> vocab, List<Integer> postings) throws BTreeException, IOException {
@@ -66,7 +97,7 @@ public class DiskIndexWriter {
 	}
 
 	public void createDocumentWeights(Path absolutePath, Map<Integer, Map<String, Integer>> docWeightList)  throws IOException {
-		try (DataOutputStream out = new DataOutputStream(new FileOutputStream(absolutePath.resolve("docWeights.bin").toFile()))) {
+		try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(absolutePath.resolve("docWeights.bin").toFile())))) {
 			for (Map<String, Integer> docWeights : docWeightList.values()) {
 				double ld = docWeights.values()
 					.stream()

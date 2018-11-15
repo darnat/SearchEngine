@@ -20,3 +20,4 @@ build/
 corpus/*
 corpus_small/*
 nbproject/
+btree4j.properties
