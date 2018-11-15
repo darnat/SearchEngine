@@ -26,6 +26,7 @@ import java.util.*;
 
 public class PositionalInvertedIndexer { 
 	public static void main(String[] args) throws IOException, Exception {
+            
 		Scanner sc = new Scanner(System.in);	
 		String query = null;
 		Path corpusPath = null;                

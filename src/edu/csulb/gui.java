@@ -45,6 +45,8 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.JTable;
 import javax.swing.border.EtchedBorder;
 import java.awt.Font;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.SwingConstants;
 import javax.swing.Box;
 import javax.swing.DefaultListModel;
@@ -54,6 +56,7 @@ import javax.swing.JList;
 import javax.swing.ListSelectionModel;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
+import libs.btree4j.BTreeException;
 
 public class gui {
 
@@ -283,7 +286,13 @@ public class gui {
 
 							long start = System.currentTimeMillis();
 							index = indexCorpus(corpus, processor);
-							diskIndexWriter.writeIndex(index, corpus, Paths.get(fileChooser.getSelectedFile().getAbsolutePath(), "disk"));
+                                                    try {
+                                                        diskIndexWriter.writeIndex(Paths.get(fileChooser.getSelectedFile().getAbsolutePath(), "disk"), index);
+                                                    } catch (IOException ex) {
+                                                        Logger.getLogger(gui.class.getName()).log(Level.SEVERE, null, ex);
+                                                    } catch (BTreeException ex) {
+                                                        Logger.getLogger(gui.class.getName()).log(Level.SEVERE, null, ex);
+                                                    }
 							long end = System.currentTimeMillis();
 							indexIndicator.setText("Indexed: " + ((end - start) / 1000) + " seconds.");
 							// Check if search button was disabled, to enable it
