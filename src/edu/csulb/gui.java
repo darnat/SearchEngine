@@ -47,6 +47,8 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.JTable;
 import javax.swing.border.EtchedBorder;
 import java.awt.Font;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.SwingConstants;
 import javax.swing.AbstractButton;
 import javax.swing.Box;
@@ -59,6 +61,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.JRadioButton;
+import libs.btree4j.BTreeException;
 
 public class gui {
 
@@ -301,11 +304,9 @@ public class gui {
 								diskIndexWriter.writeIndex(
 										Paths.get(fileChooser.getSelectedFile().getAbsolutePath(), "index"), index);
 							} catch (IOException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
+                                Logger.getLogger(gui.class.getName()).log(Level.SEVERE, null, e);
 							} catch (BTreeException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
+                                Logger.getLogger(gui.class.getName()).log(Level.SEVERE, null, e);
 							}
 							long end = System.currentTimeMillis();
 							indexIndicator.setText("Indexed: " + ((end - start) / 1000) + " seconds.");
