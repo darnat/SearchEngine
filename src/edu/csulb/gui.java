@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
 import java.io.File;
+import java.util.*;
 
 import javax.swing.JFileChooser;
 import java.awt.event.KeyAdapter;
@@ -88,20 +89,24 @@ public class gui {
 		});
 	}
 
-	private static Index indexCorpus(DocumentCorpus corpus, TokenProcessor processor) {
+	private static Index indexCorpus(DocumentCorpus corpus, TokenProcessor processor, Map<Integer, Map<String, Integer>> docWeightList) {
 		Iterable<Document> documents = corpus.getDocuments();
 		PositionalInvertedIndex index = new PositionalInvertedIndex();
+		Map<String, Integer> tmpWeight;
 
 		for (Document doc : documents) {
 			int position = 0;
+			tmpWeight = new HashMap<String, Integer>();
 			Iterable<String> tokens = new EnglishTokenStream(doc.getContent()).getTokens();
 			for (String token : tokens) {
 				List<String> terms = processor.processToken(token);
 				for (String term : terms) {
 					index.addTerm(term, doc.getId(), position);
+					tmpWeight.put(term, tmpWeight.getOrDefault(term, 0) + 1);
 				}
 				position++;
 			}
+			docWeightList.put(doc.getId(), tmpWeight);
 		}
 
 		return index;
@@ -287,10 +292,14 @@ public class gui {
 									".json");
 
 							long start = System.currentTimeMillis();
-							index = indexCorpus(corpus, processor);
+							Map<Integer, Map<String, Integer>> docWeightList = new TreeMap<>();
+							index = indexCorpus(corpus, processor, docWeightList);
 							try {
+								System.out.println("------------" + docWeightList.size());
+								diskIndexWriter.createDocumentWeights(
+										Paths.get(fileChooser.getSelectedFile().getAbsolutePath(), "index"), docWeightList);
 								diskIndexWriter.writeIndex(
-										Paths.get(fileChooser.getSelectedFile().getAbsolutePath(), "disk"), index);
+										Paths.get(fileChooser.getSelectedFile().getAbsolutePath(), "index"), index);
 							} catch (IOException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
