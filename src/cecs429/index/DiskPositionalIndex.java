@@ -40,10 +40,8 @@ public class DiskPositionalIndex implements Index {
 
 				// Move file-pointer to location
 				mPostings.seek(location);
-				System.out.println("Location : " + location);
 
 				int dft = nextInt(); // read df(t)
-				System.out.println("Document Frequency : " + dft);
 
 				int docGap = 0;
 				int posGap;
