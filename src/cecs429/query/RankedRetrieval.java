@@ -54,7 +54,8 @@ public class RankedRetrieval {
                 // }
                 
                 // Calculate weight of doc = 1 + ln(tf(t,d)) 
-                wDT = 1.0 + Math.log((double) p.getPositions().size());
+                // wDT = 1.0 + Math.log((double) p.getPositions().size());
+                wDT = p.getTermFrequency();
                 
                 // Acquire A(d)
                 accu = accumulator.getOrDefault(p.getDocumentId(), 0.0); 

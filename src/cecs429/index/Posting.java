@@ -9,10 +9,11 @@ import java.util.*;
 public class Posting {
 	private List<Integer> mPositions = new ArrayList<>();
 	private int mDocumentId;
+	private double mTermFrequency = 0.0;
 	
 	public Posting(int documentId, int position) {
 		mDocumentId = documentId;
-		mPositions.add(position);
+		addPosition(position);
 	}
 
 	public Posting(int documentId) {
@@ -29,6 +30,15 @@ public class Posting {
 
 	public void addPosition(int position) {
 		mPositions.add(position);
+		// mTermFrequency = 1.0 + Math.log((double) mPositions.size());
+	}
+
+	public double getTermFrequency() {
+		return mTermFrequency;
+	}
+
+	public void setTermFrequency(double frequency) {
+		mTermFrequency = frequency;
 	}
 
 	@Override

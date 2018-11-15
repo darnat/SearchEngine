@@ -138,10 +138,12 @@ public class PositionalInvertedIndexer {
 		Iterable<Document> documents = corpus.getDocuments();
 		PositionalInvertedIndex index = new PositionalInvertedIndex();
 		DiskIndexWriter diw = new DiskIndexWriter();
-		Map<Integer, Map<String, Integer>> docWeightList = new HashMap<>();
+		Map<Integer, Map<String, Integer>> docWeightList = new TreeMap<>();
+		Map<String, Integer> tmpWeight;
 
 		for (Document doc : documents) {
 			int position = 0;
+			tmpWeight = new HashMap<String, Integer>();
 			Iterable<String> tokens = new EnglishTokenStream(doc.getContent()).getTokens();
 			for (String token : tokens) {
 				List<String> terms = processor.processToken(token);
@@ -149,22 +151,27 @@ public class PositionalInvertedIndexer {
 					index.addTerm(term, doc.getId(), position);
 					
 					// For document weight calculations
-					if (docWeightList.containsKey(doc.getId())) {
-						Map<String, Integer> docWeights = docWeightList.get(doc.getId());
+					// tmpWeight = docWeightList.getOrDefault(doc.getId(), new HashMap<String, Integer>());
+					tmpWeight.put(term, tmpWeight.getOrDefault(term, 0) + 1);
+					// docWeightList.put(doc.getId(), tmpWeight);
 
-						if (docWeights.containsKey(term)) {
-							docWeights.put(term, docWeights.get(term) + 1); // increment term frequency
-						} else {
-							docWeights.put(term, 1);
-						}
-					} else {
-						Map<String, Integer> weight = new HashMap<String, Integer>();
-						weight.put(term, 1);
-						docWeightList.put(doc.getId(), weight);
-					}
+					// if (docWeightList.containsKey(doc.getId())) {
+					// 	Map<String, Integer> docWeights = docWeightList.get(doc.getId());
+
+					// 	if (docWeights.containsKey(term)) {
+					// 		docWeights.put(term, docWeights.get(term) + 1); // increment term frequency
+					// 	} else {
+					// 		docWeights.put(term, 1);
+					// 	}
+					// } else {
+					// 	Map<String, Integer> weight = new HashMap<String, Integer>();
+					// 	weight.put(term, 1);
+					// 	docWeightList.put(doc.getId(), weight);
+					// }
 				}
 				position++;
 			}
+			docWeightList.put(doc.getId(), tmpWeight);
 		}
 
 		try {

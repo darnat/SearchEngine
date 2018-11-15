@@ -8,6 +8,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -16,7 +17,7 @@ import java.util.function.Predicate;
  */
 public class DirectoryCorpus implements DocumentCorpus {
 	// The map from document ID to document.
-	private HashMap<Integer, Document> mDocuments;
+	private TreeMap<Integer, Document> mDocuments;
 	
 	// Maintains a map of registered file types that the corpus knows how to load.
 	private HashMap<String, FileDocumentFactory> mFactories = new HashMap<>();
@@ -49,11 +50,11 @@ public class DirectoryCorpus implements DocumentCorpus {
 	/**
 	 * Reads all documents in the corpus into a map from ID to document object.
 	 */
-	private HashMap<Integer, Document> readDocuments() throws IOException {
+	private TreeMap<Integer, Document> readDocuments() throws IOException {
 		Iterable<Path> allFiles = findFiles();
 		
 		// Next build the mapping from document ID to document.
-		HashMap<Integer, Document> result = new HashMap<>();
+		TreeMap<Integer, Document> result = new TreeMap<>();
 		int nextId = 0;
 		for (Path file : allFiles) {
 			// Use the registered factory for the file's extension.
