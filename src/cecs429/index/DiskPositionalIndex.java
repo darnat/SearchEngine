@@ -16,6 +16,8 @@ public class DiskPositionalIndex implements Index {
 	private RandomAccessFile mDocWeights;
 	private BIndexFile mBt;
 
+	private static final int BLOCK_SIZE = 512;
+
 	public DiskPositionalIndex(Path absolutePath) throws Exception {
 		mBt = new BIndexFile(absolutePath.resolve("bplustree.bin").toFile());
 		mBt.init(true);
@@ -38,25 +40,27 @@ public class DiskPositionalIndex implements Index {
 
 				// Move file-pointer to location
 				mPostings.seek(location);
+				System.out.println("Location : " + location);
 
-				int dft = mPostings.readInt(); // read df(t)
+				int dft = nextInt(); // read df(t)
+				System.out.println("Document Frequency : " + dft);
+
 				int docGap = 0;
 				int posGap;
 				for (int i = 0; i < dft; i++) {
-					int docId = mPostings.readInt() + docGap; // read docId
+					int docId = nextInt() + docGap; // read docId
 					docGap = docId;
 
 					Posting posting = new Posting(docId);
 					List<Integer> positions = new ArrayList<>();
 					int pos;
 					posGap = 0;
-					int tftd = mPostings.readInt(); // read tf(td)
+					int tftd = nextInt(); // read tf(td)
 					for (int j = 0; j < tftd; j++) {
-						pos = mPostings.readInt(); // read p(t)
+						pos = nextInt(); // read p(t)
 						posting.addPosition(pos + posGap);
 						posGap += pos;
 					}
-					postings.add(posting);
 				}
 			}
 		} catch (Exception ex) {
@@ -68,6 +72,23 @@ public class DiskPositionalIndex implements Index {
 		}
 
 		return postings;
+	}
+
+	private int nextInt() throws Exception {
+		// return mPostings.readInt();
+		int n = 0;
+		byte b;
+		// System.out.println("Number : ");
+		for (;;) {
+			b = mPostings.readByte();
+			// System.out.print("Byte : " + String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0') + " ");
+			if ((b & 0xFF) < 128) {
+				n = 128 * n + (b & 0xFF);
+			} else {
+				n = 128 * n + ((b & 0xFF) - 128);
+				return n;
+			}
+		}
 	}
 	
 	@Override
