@@ -37,6 +37,8 @@ public class RankedRetrieval {
 
         getTokens(query).forEach((token) -> {
             List<Posting> postings = index.getPostings(token);
+
+            System.out.println("Postings size: " + postings.size());
             
             //Calculate w(q,t) 
             double wQT = 0.0, accu = 0.0, wDT = 0.0;

@@ -95,27 +95,29 @@ public class PositionalInvertedIndexer {
 				printResult(corpus, results);
 																
 				System.out.println("Number of documents: " + results.size());
-				System.out.print("\nDo you wish to select a document to view (y, n)? ");
-				String docRequested = sc.nextLine();
 
-				if (docRequested.toLowerCase().equals("y")) {
-					System.out.print("Please enter a list number from the list above: ");
-					int listNum = sc.nextInt();
-					int docId = results.get(--listNum).getKey();
-					BufferedReader in = new BufferedReader(corpus.getDocument(docId).getContent());
-					String line = null;
+				if (results.size() > 0) {
+					System.out.print("\nDo you wish to select a document to view (y, n)? ");
+					String docRequested = sc.nextLine();
 
-					try {
-						while ((line = in.readLine()) != null) {
-							System.out.println(line);
+					if (docRequested.toLowerCase().equals("y")) {
+						System.out.print("Please enter a list number from the list above: ");
+						int listNum = sc.nextInt();
+						int docId = results.get(--listNum).getKey();
+						BufferedReader in = new BufferedReader(corpus.getDocument(docId).getContent());
+						String line = null;
+
+						try {
+							while ((line = in.readLine()) != null) {
+								System.out.println(line);
+							}
+						} catch(IOException ex) {
+							System.out.println("Error reading document.");
 						}
-					} catch(IOException ex) {
-						System.out.println("Error reading document.");
+						// Flush the buffer
+						sc.nextLine();
 					}
-					// Flush the buffer
-					sc.nextLine();
-				}
-				else {
+				} else {
 					System.out.println("Term was not found.");
 				}
 				
