@@ -43,7 +43,16 @@ public class PositionalInvertedIndexer {
 				corpusInfo = buildIndex(sc);
 			} else if (res.startsWith("2")) {
 				if (corpusInfo != null) {
-					queryIndex(sc, corpusInfo);
+					System.out.println("\n1. Boolean retrieval.");
+					System.out.println("2. Ranked retrieval.");
+					System.out.print("\n\nPlease make a selection: ");
+					res = sc.nextLine();
+
+					if (res.startsWith("1")) {
+						milestone1(sc, corpusInfo);
+					} else if (res.startsWith("2")) {
+						queryIndex(sc, corpusInfo);
+					}
 				} else {
 					System.out.println("Please build an index first before trying to query it.");
 				}
@@ -193,78 +202,86 @@ public class PositionalInvertedIndexer {
 		}
 	}
 
-	private static void milestone1() {
-		// while(true) {
-		// 	System.out.println("\nSpecial queries available:");
-		// 	System.out.println(":q - To quit application");
-		// 	System.out.println(":stem token - To stem a token");
-		// 	System.out.println(":index directoryname - To index a directory");
-		// 	System.out.println(":vocab - To print the first 1000 terms in the corpus vocabulary");
-		// 	System.out.print("\n\nPlease enter your search query: ");
-		// 	query = sc.nextLine();
+	private static void milestone1(Scanner sc, CorpusInfo corpusInfo) {
+		String query = null;
 
-		// 	if (query.equals(":q")) {
-		// 		break;
-		// 	} else if (query.startsWith(":stem")) {
-		// 		System.out.println("Stemmed token: " + Stemmer.getInstance().stemToken(query.split(" ")[1]));
-		// 	} else if (query.startsWith(":index")) {
-		// 		corpus = DirectoryCorpus.loadJsonDirectory(Paths.get(query.split(" ")[1]).toAbsolutePath(), ".json");
-		// 		System.out.println("Indexing in progress...");
-		// 		start = System.currentTimeMillis();
-		// 		index = indexCorpus(corpus, processor);
-		// 		end = System.currentTimeMillis();
-		// 		System.out.println("Indexing completed in " + ((end - start) / 1000) + " seconds.");
-		// 	// } else if (query.startsWith(":vocab")) {
-		// 	// 	List<String> vocabulary = index.getVocabulary();
-		// 	// 	System.out.println("Printing first 1000 terms in vocabulary of corpus.");
-		// 	// 	for (int i = 0; i < 1000 && i < vocabulary.size(); i++) {
-		// 	// 		System.out.println(i + ": " + vocabulary.get(i));
-		// 	// 	}
-		// 	// 	System.out.println("Total number of vocabulary terms: " + vocabulary.size());
-		// 	} else {
-		// 		QueryComponent qc = queryParser.parseQuery(query);
+		System.out.println("\n\n-----Boolean Retrieval Mode-----");
+		System.out.println(":q - To quit application");
 
-		// 		if (qc != null) {
-		// 			List<Posting> postings = qc.getPostings(index, processor);
+		while(true) {
+			System.out.print("\n\nPlease enter your search query: ");
+			query = sc.nextLine();
 
-		// 			if (!postings.isEmpty()) {
-		// 				for (int i = 0; i < postings.size(); i++) {
-		// 					System.out.println(i + ": " + corpus.getDocument(postings.get(i).getDocumentId()).getTitle());
-		// 				}
-		// 				System.out.println("Number of documents: " + postings.size());
-		// 				System.out.print("\n\nDo you wish to select a document to view? (y, n) ");
-		// 				String docRequested = sc.nextLine();
-		// 				if (docRequested.toLowerCase().equals("y")) {
-		// 					System.out.print("Please enter a list number from the list above: ");
-		// 					int listNum = sc.nextInt();
-		// 					int docId = postings.get(listNum).getDocumentId();
-		// 					BufferedReader in = new BufferedReader(corpus.getDocument(docId).getContent());
-		// 					String line = null;
-		// 					// Print entire document content
-		// 					// TODO: Remove after Snippet is fully working
-		// 					try {
-		// 						while ((line = in.readLine()) != null) {
-		// 							System.out.println(line);
-		// 						}
-		// 					} catch(IOException ex) {
-		// 						System.out.println("Error reading document.");
-		// 					}
-		// 					// Flush the buffer
-		// 					sc.nextLine();
+			if (query.equals(":q")) {
+				break;
+			}
+			// } else if (query.startsWith(":stem")) {
+			// 	System.out.println("Stemmed token: " + Stemmer.getInstance().stemToken(query.split(" ")[1]));
+			// } else if (query.startsWith(":index")) {
+			// 	corpus = DirectoryCorpus.loadJsonDirectory(Paths.get(query.split(" ")[1]).toAbsolutePath(), ".json");
+			// 	System.out.println("Indexing in progress...");
+			// 	start = System.currentTimeMillis();
+			// 	index = indexCorpus(corpus, processor);
+			// 	end = System.currentTimeMillis();
+			// 	System.out.println("Indexing completed in " + ((end - start) / 1000) + " seconds.");
+			// } else if (query.startsWith(":vocab")) {
+			// 	List<String> vocabulary = index.getVocabulary();
+			// 	System.out.println("Printing first 1000 terms in vocabulary of corpus.");
+			// 	for (int i = 0; i < 1000 && i < vocabulary.size(); i++) {
+			// 		System.out.println(i + ": " + vocabulary.get(i));
+			// 	}
+			// 	System.out.println("Total number of vocabulary terms: " + vocabulary.size());
 
-		// 					// Print snippet
-		// 					Snippet snip = new Snippet(
-		// 						corpus.getDocument(docId).getContent(),
-		// 						postings.get(listNum).getPositions()
-		// 					);
-		// 					System.out.println("\n\nSnippet: " + snip.getContent());
-		// 				}
-		// 			} else {
-		// 				System.out.println("Term was not found.");
-		// 			}
-		// 		}
-		// 	}
-		// }
+			try {
+				DiskPositionalIndex dpi = new DiskPositionalIndex(corpusInfo.getCorpusPath().resolve("index"));			
+				DocumentCorpus corpus = corpusInfo.getCorpus();
+				BooleanQueryParser queryParser = new BooleanQueryParser();
+				TokenProcessor processor = new DefaultTokenProcessor();
+				QueryComponent qc = queryParser.parseQuery(query);
+
+				if (qc != null) {
+					List<Posting> postings = qc.getPostings(dpi, processor);
+
+					if (!postings.isEmpty()) {
+						for (int i = 0; i < postings.size(); i++) {
+							System.out.println(i + ": " + corpus.getDocument(postings.get(i).getDocumentId()).getTitle());
+						}
+						System.out.println("Number of documents: " + postings.size());
+						System.out.print("\n\nDo you wish to select a document to view? (y, n) ");
+						String docRequested = sc.nextLine();
+						if (docRequested.toLowerCase().equals("y")) {
+							System.out.print("Please enter a list number from the list above: ");
+							int listNum = sc.nextInt();
+							int docId = postings.get(listNum).getDocumentId();
+							BufferedReader in = new BufferedReader(corpus.getDocument(docId).getContent());
+							String line = null;
+							// Print entire document content
+							// TODO: Remove after Snippet is fully working
+							try {
+								while ((line = in.readLine()) != null) {
+									System.out.println(line);
+								}
+							} catch(IOException ex) {
+								System.out.println("Error reading document.");
+							}
+							// Flush the buffer
+							sc.nextLine();
+
+							// Print snippet
+							Snippet snip = new Snippet(
+								corpus.getDocument(docId).getContent(),
+								postings.get(listNum).getPositions()
+							);
+							System.out.println("\n\nSnippet: " + snip.getContent());
+						}
+					} else {
+						System.out.println("Term was not found.");
+					}
+				}
+			} catch (Exception ex) {
+				System.out.println("Error getting DiskPositionalIndex when querying using Boolean retrieval.");
+			}
+		}
 	}
 
 	private static class CorpusInfo {
