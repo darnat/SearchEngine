@@ -61,6 +61,7 @@ public class DiskPositionalIndex implements Index {
 						posting.addPosition(pos + posGap);
 						posGap += pos;
 					}
+					postings.add(posting);
 				}
 			}
 		} catch (Exception ex) {
