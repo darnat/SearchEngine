@@ -304,9 +304,9 @@ public class gui {
 								diskIndexWriter.writeIndex(
 										Paths.get(fileChooser.getSelectedFile().getAbsolutePath(), "index"), index);
 							} catch (IOException e) {
-                                Logger.getLogger(gui.class.getName()).log(Level.SEVERE, null, ex);
+                                Logger.getLogger(gui.class.getName()).log(Level.SEVERE, null, e);
 							} catch (BTreeException e) {
-                                Logger.getLogger(gui.class.getName()).log(Level.SEVERE, null, ex);
+                                Logger.getLogger(gui.class.getName()).log(Level.SEVERE, null, e);
 							}
 							long end = System.currentTimeMillis();
 							indexIndicator.setText("Indexed: " + ((end - start) / 1000) + " seconds.");
