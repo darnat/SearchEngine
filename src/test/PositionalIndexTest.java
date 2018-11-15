@@ -26,7 +26,7 @@ public class PositionalIndexTest {
 	
 	   public static void initializeTest() {
 		   Path corpusPath = Paths.get("small-corpus").toAbsolutePath().normalize();
-		   corpus = DirectoryCorpus.loadTextDirectory(corpusPath, ".txt");
+		   corpus = DirectoryCorpus.loadJsonDirectory(corpusPath, ".json");
 		   TokenProcessor processor = new DefaultTokenProcessor();
 		   index = indexCorpusMemory(corpus, processor);
 //		   assertEquals("I am done with Junit setup",str);
@@ -36,9 +36,9 @@ public class PositionalIndexTest {
 	   public void testVocabSize() {
 		   initializeTest();
 		   List<String> vocabulary = index.getVocabulary();
-			for (int i = 0; i < vocabulary.size(); i++) {
-				System.out.println(i + ": " + vocabulary.get(i));
-			}
+//			for (int i = 0; i < vocabulary.size(); i++) {
+//				System.out.println(i + ": " + vocabulary.get(i));
+//			}
 			assertEquals(vocabulary.size(), 46);
 	   }
 	   
@@ -47,17 +47,17 @@ public class PositionalIndexTest {
 		   initializeTest();
 		   TokenProcessor processor = new DefaultTokenProcessor();
 		   BooleanQueryParser queryParser = new BooleanQueryParser();
-		   QueryComponent qc = queryParser.parseQuery("glados");
+		   QueryComponent qc = queryParser.parseQuery("corpus");
 		   List<Posting> postings = qc.getPostings(index, processor);
-		   assertEquals(postings.size(), 1);
+		   assertEquals(1, postings.size());
 		   
 		   qc = queryParser.parseQuery("cake");
 		   postings = qc.getPostings(index, processor);
-		   assertEquals(postings.size(), 2);
+		   assertEquals(2, postings.size());
 		   
 		   qc = queryParser.parseQuery("random");
 		   postings = qc.getPostings(index, processor);
-		   assertEquals(postings.size(), 1);
+		   assertEquals(1, postings.size());
 	   }
 	   
 	   @Test
@@ -65,10 +65,33 @@ public class PositionalIndexTest {
 		   initializeTest();
 		   TokenProcessor processor = new DefaultTokenProcessor();
 		   BooleanQueryParser queryParser = new BooleanQueryParser();
-		   QueryComponent qc = queryParser.parseQuery("corpus + glados");
+		   QueryComponent qc = queryParser.parseQuery("wow + fork");
 		   List<Posting> postings = qc.getPostings(index, processor);
-		   System.out.println(postings.size());
-		   assertEquals(postings.size(), 2);
+		   assertEquals(2, postings.size());
+	   }
+	   
+	   @Test
+	   public void testSimpleAndQuery() {
+		   initializeTest();
+		   TokenProcessor processor = new DefaultTokenProcessor();
+		   BooleanQueryParser queryParser = new BooleanQueryParser();
+		   QueryComponent qc = queryParser.parseQuery("lie boy");
+		   List<Posting> postings = qc.getPostings(index, processor);
+		   assertEquals(1, postings.size());
+		   
+		   qc = queryParser.parseQuery("cake lie");
+		   postings = qc.getPostings(index, processor);
+		   assertEquals(2, postings.size());
+	   }
+	   
+	   @Test
+	   public void testComplexOrAndQuery() {
+		   initializeTest();
+		   TokenProcessor processor = new DefaultTokenProcessor();
+		   BooleanQueryParser queryParser = new BooleanQueryParser();
+		   QueryComponent qc = queryParser.parseQuery("lie + boy glados");
+		   List<Posting> postings = qc.getPostings(index, processor);
+		   assertEquals(1, postings.size());
 	   }
 	   
 		private static Index indexCorpusMemory(DocumentCorpus corpus, TokenProcessor processor) {
