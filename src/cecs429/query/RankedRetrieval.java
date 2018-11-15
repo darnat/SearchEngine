@@ -32,11 +32,12 @@ public class RankedRetrieval {
      * @return   
      * @throws java.io.IOException 
      */
-    public static Map<Integer, Double> accumulate(Index index, int corpusSize, String query) throws IOException {
+    public static Map<Integer, Double> accumulate(DiskPositionalIndex index, int corpusSize, String query) throws IOException {
         Map<Integer, Double> accumulator = new HashMap<>();
 
         getTokens(query).forEach((token) -> {
             List<Posting> postings = index.getPostings(token);
+            System.out.println("Size of postings: " + postings.size());
             
             //Calculate w(q,t) 
             double wQT = 0.0, accu = 0.0, wDT = 0.0;
@@ -44,27 +45,30 @@ public class RankedRetrieval {
             if (!postings.isEmpty()) {
                 wQT = Math.log(1.0 + ((double) corpusSize / (double) postings.size()));
             }
- 
+
             for (Posting p : postings) {
-                //Never encountered, add and initialize
-                if (!accumulator.containsKey(p.getDocumentId())) 
-                    accumulator.put(p.getDocumentId(), 0.0);
+                // Never encountered, add and initialize
+                // if (!accumulator.containsKey(p.getDocumentId())) {
+                //     accumulator.put(p.getDocumentId(), 0.0);
+                // }
                 
-                //calculate weight of doc = 1 + ln(tf(t,d)) 
-                wDT = 1.0 + Math.log((double)p.getPositions().size());
+                // Calculate weight of doc = 1 + ln(tf(t,d)) 
+                wDT = 1.0 + Math.log((double) p.getPositions().size());
                 
-                //acquire A(d)
-                accu = accumulator.get(p.getDocumentId()); 
+                // Acquire A(d)
+                accu = accumulator.getOrDefault(p.getDocumentId(), 0.0); 
                 
-                accumulator.replace(p.getDocumentId(), accu + (wQT * wDT));
+                accumulator.put(p.getDocumentId(), accu + (wQT * wDT));
             }
         });
         
         // Divide all A(d) by L(d)
+        System.out.println("Size of accumulator: " + accumulator.size());
         for (Integer key : accumulator.keySet()) {
             if (accumulator.get(key) != 0.0) {
-                // Accumulator = Acculmulator / L(d)
-                accumulator.replace(key, (double) accumulator.get(key) / (double) DiskPositionalIndex.getDocWeight(key));
+                //System.out.println("Key in accumulator: " + key);
+                // Accumulator = Accumulator / L(d)
+                accumulator.put(key, (double) accumulator.get(key) / index.getDocWeight(key));
             }
         }
         
@@ -104,6 +108,7 @@ public class RankedRetrieval {
         for (String token : tokens) {
             tokenList.addAll(processor.processToken(token));
         }
+        System.out.println("Size of tokenList: " + tokenList.size());
         return tokenList;
     }
     

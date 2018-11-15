@@ -13,7 +13,7 @@ import java.util.*;
  */
 public class DiskPositionalIndex implements Index {
 	private RandomAccessFile mPostings;
-	private static RandomAccessFile mDocWeights;
+	private RandomAccessFile mDocWeights;
 	private BIndexFile mBt;
 
 	public DiskPositionalIndex(Path absolutePath) throws Exception {
@@ -32,30 +32,32 @@ public class DiskPositionalIndex implements Index {
 		try {
 			// Get posting location from B+ tree
 			Value v = mBt.getValue(new Value(term));
-			DataInputStream in = new DataInputStream(v.getInputStream());
-			long location = in.readLong();
+			if (v.getLength() > 0) {
+				DataInputStream in = new DataInputStream(v.getInputStream());
+				long location = in.readLong();
 
-			// Move file-pointer to location
-			mPostings.seek(location);
+				// Move file-pointer to location
+				mPostings.seek(location);
 
-			int dft = mPostings.readInt(); // read df(t)
-			int docGap = 0;
-			int posGap;
-			for (int i = 0; i < dft; i++) {
-				int docId = mPostings.readInt() + docGap; // read docId
-				docGap = docId;
+				int dft = mPostings.readInt(); // read df(t)
+				int docGap = 0;
+				int posGap;
+				for (int i = 0; i < dft; i++) {
+					int docId = mPostings.readInt() + docGap; // read docId
+					docGap = docId;
 
-				Posting posting = new Posting(docId);
-				List<Integer> positions = new ArrayList<>();
-				int pos;
-				posGap = 0;
-				int tftd = mPostings.readInt(); // read tf(td)
-				for (int j = 0; j < tftd; j++) {
-					pos = mPostings.readInt(); // read p(t)
-					posting.addPosition(pos + posGap);
-					posGap += pos;
+					Posting posting = new Posting(docId);
+					List<Integer> positions = new ArrayList<>();
+					int pos;
+					posGap = 0;
+					int tftd = mPostings.readInt(); // read tf(td)
+					for (int j = 0; j < tftd; j++) {
+						pos = mPostings.readInt(); // read p(t)
+						posting.addPosition(pos + posGap);
+						posGap += pos;
+					}
+					postings.add(posting);
 				}
-				postings.add(posting);
 			}
 		} catch (Exception ex) {
 			// B+ tree crashes when term not found with NullPointerException :/
@@ -74,9 +76,16 @@ public class DiskPositionalIndex implements Index {
 		return null;
 	}
 
-	public static double getDocWeight(int docId) throws IOException {
-		mDocWeights.seek(docId * 8);
-		return mDocWeights.readDouble();
+	public double getDocWeight(int docId) throws IOException {
+		double docWeight = 0.0;
+		try {
+			mDocWeights.seek(docId * 8);
+			docWeight=  mDocWeights.readDouble();
+		} catch (IOException ex) {
+			System.out.println("Error reading from DocumentWeight file with docId: " + docId);
+		}
+
+		return docWeight;
 	}
 
 	public void closeFiles() throws Exception {

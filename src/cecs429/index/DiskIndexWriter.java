@@ -24,7 +24,7 @@ public class DiskIndexWriter {
 		int docIdGap;
 		int posGap;
 
-		try (DataOutputStream out = new DataOutputStream(new FileOutputStream(file))) {
+		try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
 			for (String term : vocab) {
 				docIdGap = 0;
 				List<Posting> postings = idx.getPostings(term);
@@ -66,7 +66,7 @@ public class DiskIndexWriter {
 	}
 
 	public void createDocumentWeights(Path absolutePath, Map<Integer, Map<String, Integer>> docWeightList)  throws IOException {
-		try (DataOutputStream out = new DataOutputStream(new FileOutputStream(absolutePath.resolve("docWeights.bin").toFile()))) {
+		try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(absolutePath.resolve("docWeights.bin").toFile())))) {
 			for (Map<String, Integer> docWeights : docWeightList.values()) {
 				double ld = docWeights.values()
 					.stream()

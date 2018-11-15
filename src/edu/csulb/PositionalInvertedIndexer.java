@@ -125,7 +125,7 @@ public class PositionalInvertedIndexer {
 			
 			dpi.closeFiles();
 		} catch (Exception ex) {
-			System.out.println("Error querying disk index...");
+			System.out.println("Error querying disk index: " + ex.getMessage());
 			for (StackTraceElement e : ex.getStackTrace()) {
 				System.out.println(e);
 			}
