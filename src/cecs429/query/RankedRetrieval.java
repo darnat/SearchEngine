@@ -37,7 +37,6 @@ public class RankedRetrieval {
 
         getTokens(query).forEach((token) -> {
             List<Posting> postings = index.getPostings(token);
-            System.out.println("Size of postings: " + postings.size());
             
             //Calculate w(q,t) 
             double wQT = 0.0, accu = 0.0, wDT = 0.0;
@@ -63,10 +62,8 @@ public class RankedRetrieval {
         });
         
         // Divide all A(d) by L(d)
-        System.out.println("Size of accumulator: " + accumulator.size());
         for (Integer key : accumulator.keySet()) {
             if (accumulator.get(key) != 0.0) {
-                //System.out.println("Key in accumulator: " + key);
                 // Accumulator = Accumulator / L(d)
                 accumulator.put(key, (double) accumulator.get(key) / index.getDocWeight(key));
             }
@@ -108,7 +105,6 @@ public class RankedRetrieval {
         for (String token : tokens) {
             tokenList.addAll(processor.processToken(token));
         }
-        System.out.println("Size of tokenList: " + tokenList.size());
         return tokenList;
     }
     
