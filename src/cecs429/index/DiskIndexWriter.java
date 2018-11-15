@@ -7,6 +7,7 @@ import libs.btree4j.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
+import java.nio.ByteBuffer;
 
 public class DiskIndexWriter {
 	public void writeIndex(Path absolutePath, Index idx) throws IOException, BTreeException {
@@ -22,6 +23,7 @@ public class DiskIndexWriter {
 	private List<Integer> createPostings(File file, Index idx, List<String> vocab) throws IOException {
 		List<Integer> pos = new ArrayList<>();
 		List<Byte> bytes = new ArrayList<>();
+		double termFrequency;
 		int written = 0;
 		int docIdGap;
 		int posGap;
@@ -33,6 +35,7 @@ public class DiskIndexWriter {
 
 				// pos.add(out.size()); // Save byte position
 				pos.add(written); // Save byte position
+
 				written += writeOn(out, postings.size(), bytes);
 				// out.writeInt(postings.size()); // df(t) - # of docs containing term
 				for (Posting p : postings) {
@@ -40,6 +43,9 @@ public class DiskIndexWriter {
 					written += writeOn(out, p.getDocumentId() - docIdGap, bytes);
 					// out.writeInt(p.getDocumentId() - docIdGap); // docId containing term utilizing gaps
 					docIdGap = p.getDocumentId();
+
+					termFrequency = 1.0 + Math.log((double) p.getPositions().size());
+					written += writeOn(out, termFrequency, bytes);
 
 					List<Integer> positions = p.getPositions();
 					written += writeOn(out, positions.size(), bytes);
@@ -66,6 +72,22 @@ public class DiskIndexWriter {
 			finalBytes[i] = (byte)bytes.get(i);
 		}
 		return finalBytes;
+	}
+
+	public static byte[] toByteArray(double value) {
+        byte[] bytes = new byte[8];
+        ByteBuffer.wrap(bytes).putDouble(value);
+        return bytes;
+    }
+
+	private int writeOn(DataOutputStream out, double n, List<Byte> bytes) throws IOException {
+		byte[] tmp;
+
+		tmp = toByteArray(n);
+		for (byte b : tmp) {
+			bytes.add(b);
+		}
+		return tmp.length;
 	}
 
 	private int writeOn(DataOutputStream out, int n, List<Byte> bytes) throws IOException {

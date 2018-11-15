@@ -26,8 +26,4 @@ public class ByteEncode {
         return r;
     }
 
-    public static int byteArrayToInt(byte[] bytes) {
-        return 0;
-    }
-
 }
