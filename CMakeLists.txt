@@ -16,8 +16,8 @@ endfunction()
 
 # set(CMAKE_JAVA_COMPILE_FLAGS "-source" "8" "-target" "8" "-sourcepath" "src")
 set(CMAKE_JAVA_COMPILE_FLAGS "--release" "8" "-sourcepath" "src")
-# set(MAIN_CLASS "edu.csulb.PositionalInvertedIndexer") # console mode
-set(MAIN_CLASS "edu.csulb.gui") # gui mode
+set(MAIN_CLASS "edu.csulb.PositionalInvertedIndexer") # console mode
+# set(MAIN_CLASS "edu.csulb.gui") # gui mode
 set(OUTPUT_DIR ${PROJECT_SOURCE_DIR}/bin)
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
