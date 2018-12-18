@@ -332,10 +332,65 @@ public class PositionalInvertedIndexer {
 		}
 
 		
-		// Find f(t,c) for judiciary in Hamilton class: Return df(t)
-		String query = ((DefaultTokenProcessor) processor).normalizeAndStemToken("federal");
+		// Testing: Find f(t,c) for judiciary in Hamilton class: Return df(t)
+		String query = ((DefaultTokenProcessor) processor).normalizeAndStemToken("judiciary");
 		System.out.println("f(t,c) = f(judiciary, HAMILTON): "
-			+ classes.get("HAMILTON").getIndex().getPostings(query).size());
+			+ classes.get("HAMILTON").getIndex().getPostings(query).size() + "\n");
+		
+		rocchioClassification(processor, classes, corpusPath);
+	}
+
+	private static void rocchioClassification(TokenProcessor processor, Map<String, FederalistClass> classes, Path corpusPath) {
+		Map<String, Double> centroids = new HashMap<>();
+		for (Map.Entry<String, FederalistClass> fc : classes.entrySet()) {
+			double v_d = fc.getValue().getWeights().values()
+				.stream()
+				.reduce(0.0, Double::sum);
+			
+			System.out.println("Centroid class: " + fc.getKey() + ", Centroid value: " + v_d / fc.getValue().getCorpusSize());
+			centroids.put(fc.getKey(), (v_d / fc.getValue().getCorpusSize()));
+		}
+
+		System.out.println();
+
+		// Classify disputed documents
+		DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(corpusPath.resolve("DISPUTED"), ".txt");
+		Iterable<Document> documents = corpus.getDocuments();
+
+		for (Document doc: documents) {
+			Map<String, Integer> termMap = new HashMap<>();
+			Iterable<String> tokens = new EnglishTokenStream(doc.getContent()).getTokens();
+			for (String token : tokens) {
+				List<String> terms = processor.processToken(token);
+				for (String term : terms) {
+					// Compute tf(t,d). Used for document weight calculations
+					termMap.put(term, termMap.getOrDefault(term, 0) + 1);
+				}
+			}
+			// Calculate L(d)
+			double ld = termMap.values()
+				.stream()
+				.map(a -> Math.pow(1.0 + Math.log(a), 2))
+				.reduce(0.0, Double::sum);
+			
+			ld = Math.sqrt(ld);
+
+			System.out.println("Euclidian Distance for: " +  doc.getTitle() + " with v(d): " + ld);
+			double min = 0.0d;
+			String className = null;
+			for (Map.Entry<String, Double> centroid : centroids.entrySet()) {
+				double euclidianDistance = Math.abs(centroid.getValue() - ld);
+
+				if (min > euclidianDistance || min == 0.0d) {
+					min = euclidianDistance;
+					className = centroid.getKey();
+				}
+				// Print out value
+				System.out.println(centroid.getKey() + ": " + euclidianDistance);
+			}
+
+			System.out.println(doc.getTitle() + " will be classified in the following class: " + className + "\n");
+		}
 	}
 
 	private static class CorpusInfo {
