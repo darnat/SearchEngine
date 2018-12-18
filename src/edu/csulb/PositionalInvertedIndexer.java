@@ -565,7 +565,8 @@ public class PositionalInvertedIndexer {
 			}
 			position++;
 		}
-
+		double max = Double.NEGATIVE_INFINITY;
+		String authorOwns = "";
 		for(String author : AUTHORS) {
 			double probabilityC = Math.log10((double)classes.get(author).getCorpusSize()/ totalTrainingSet);
 			double sumLogs = 0.0;
@@ -580,8 +581,13 @@ public class PositionalInvertedIndexer {
 					}
 				}
 			}
+			if(Double.compare(max, (probabilityC + sumLogs)) < 0) {
+				max = probabilityC + sumLogs;
+				authorOwns = author;
+			}
 			System.out.println(doc.getTitle() + "- Prob. of " + author + " = " + (probabilityC + sumLogs));
 		}
+		System.out.println(doc.getTitle() + " is owned by " + authorOwns + " with prob: " + max + "\n");
 	}
 	}	
 	
