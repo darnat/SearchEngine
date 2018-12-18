@@ -343,18 +343,16 @@ public class PositionalInvertedIndexer {
 		////////////////////////////////////////////////////////////////////////////
 		System.out.println("Bayesian Classification");
 		
-		int totalCorpSize = 0;
 		LinkedHashSet<String> discriminatingSet = new LinkedHashSet<String>();
 		
-		// Calculate size of corpus (N) and discriminating vocabulary set
+		// Get discriminating vocabulary set
 		for (String author : AUTHORS) {
-			totalCorpSize += classes.get(author).getCorpusSize();
 			discriminatingSet.addAll(classes.get(author).getIndex().getVocabulary());
 		}
 		
+		// Data structure for storing results of Mutual Information
 		HashMap<String, HashMap<String, Double>> mutualInformation = new HashMap<String, HashMap<String, Double>>();
 		
-		// Data structure for storing p(t,c_H), p(t,c_M), p(t,c_J)
 		for (String author : AUTHORS) {
 			// Key will be from the AUTHORS set and value will be the p(t,c)
 			mutualInformation.put(author, new HashMap<String, Double>());	
@@ -428,8 +426,6 @@ public class PositionalInvertedIndexer {
 				
 			}
 		}
-		
-		
 		
 	}
 	
