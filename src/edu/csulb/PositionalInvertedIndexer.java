@@ -480,6 +480,12 @@ public class PositionalInvertedIndexer {
 			}
 		}
 		
+		// Calculate total number of training doc
+		int totalTrainingSet = 0;
+		for (String author : AUTHORS) {
+			totalTrainingSet += classes.get(author).getCorpusSize();
+		}
+		
 		// Index Disputed Corpus
 		DocumentCorpus disputedCorpus = DirectoryCorpus.loadTextDirectory(corpusPath.resolve("DISPUTED"), ".txt");
 		Iterable<Document> documents = disputedCorpus.getDocuments();
@@ -508,33 +514,24 @@ public class PositionalInvertedIndexer {
 				.reduce(0.0, Double::sum);
 
 			weights.put(doc.getId(), Math.sqrt(ld));
-		}
-
-		FederalistClass disputedClass = new FederalistClass(disputedCorpus.getCorpusSize(), disputedIndex, weights);
-		
-		// Calculate total number of training doc
-		int totalTrainingSet = 0;
-		for (String author : AUTHORS) {
-			totalTrainingSet += classes.get(author).getCorpusSize();
-		}
-		
-		for (String author : AUTHORS) {
-			double probabilityC = Math.log10((double)classes.get(author).getCorpusSize()/ totalTrainingSet);
-			double sumLogs = 0.0;
 			
-			for (String term : disputedClass.getIndex().getVocabulary()) {
-				if (discriminatingTerms.contains(term)) {
-					for(HashMap<String, Double> prob : probabilityInformation.get(author)) {
-						Map.Entry<String,Double> entry = prob.entrySet().iterator().next();
-						if (entry.getKey().equals(term)) {							
-							sumLogs += Math.log10(entry.getValue());
-							break;
+			for(String author : AUTHORS) {
+				double probabilityC = Math.log10((double)classes.get(author).getCorpusSize()/ totalTrainingSet);
+				double sumLogs = 0.0;
+				
+				for (String term : termMap.keySet()) {
+					if (discriminatingTerms.contains(term)) {
+						for(HashMap<String, Double> prob : probabilityInformation.get(author)) {
+							Map.Entry<String,Double> entry = prob.entrySet().iterator().next();
+							if (entry.getKey().equals(term)) {							
+								sumLogs += Math.log10(entry.getValue());
+								break;
+							}
 						}
 					}
 				}
+				System.out.println(doc.getTitle() + "- Prob. of " + author + " = " + (probabilityC + sumLogs));
 			}
-			
-			System.out.println("Probability of " + author + " = " + (probabilityC + sumLogs));
 		}
 	}
 
