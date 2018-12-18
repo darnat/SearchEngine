@@ -376,9 +376,11 @@ public class PositionalInvertedIndexer {
 				// numTermNotOther reflects N_00 for mutual information (no term, other classes)
 				int numTermNotOther = 0;
 				for (String auth : AUTHORS) {
-					numTermInOther += classes.get(auth).getIndex().getPostings(term).size();
-					numTermNotOther = numTermNotOther + (classes.get(auth).getCorpusSize() 
-							- classes.get(auth).getIndex().getPostings(term).size());
+					if(!auth.equals(author)) {						
+						numTermInOther += classes.get(auth).getIndex().getPostings(term).size();
+						numTermNotOther = numTermNotOther + (classes.get(auth).getCorpusSize() 
+								- classes.get(auth).getIndex().getPostings(term).size());
+					}
 				}
 				// Reflects N_01 for mutual information (other class, has term)
 				mutualInfoArray[0][1] = numTermInOther;
@@ -387,7 +389,7 @@ public class PositionalInvertedIndexer {
 				
 				int totalDocuments = mutualInfoArray[1][1] + mutualInfoArray[1][0] 
 						+ mutualInfoArray[0][1] + mutualInfoArray[0][0];
-				
+
 				double mutualInfoResult = (
 						((double)mutualInfoArray[1][1]/totalDocuments) * 
 						log2(
@@ -421,7 +423,7 @@ public class PositionalInvertedIndexer {
 							)
 						);
 				
-//				System.out.println("I(" + author + ", " + term + ") = " + mutualInfoResult);
+				System.out.println("I(" + author + ", " + term + ") = " + mutualInfoResult);
 				mutualInformation.get(author).put(term, mutualInfoResult);
 				
 			}
@@ -431,8 +433,8 @@ public class PositionalInvertedIndexer {
 	
 	public static double log2(double d) {
 		double result = Math.log(d)/Math.log(2.0);
-		if(result < 0) {
-			return 0;
+		if(result <= 0.0) {
+			return 0.0;
 		}
 		return result;
 	}
