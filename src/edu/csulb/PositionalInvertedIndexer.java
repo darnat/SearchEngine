@@ -35,6 +35,7 @@ public class PositionalInvertedIndexer {
 			System.out.println(":q - To quit application");
 			System.out.println("1. Build index.");
 			System.out.println("2. Query index.");
+			System.out.println("3. Who Wrote the Federalist Papers?");
 			System.out.print("\n\nPlease make a selection: ");
 			res = sc.nextLine();
 
@@ -57,6 +58,8 @@ public class PositionalInvertedIndexer {
 				} else {
 					System.out.println("Please build an index first before trying to query it.");
 				}
+			} else if (res.startsWith(("3"))) {
+				milestone3(sc);
 			}
 		}
 		
@@ -285,6 +288,56 @@ public class PositionalInvertedIndexer {
 		}
 	}
 
+	private static void milestone3(Scanner sc) {
+		Map<String, FederalistClass> classes = new HashMap<>();
+		System.out.print("Please enter the name of the directory containing the Federalist folders: ");
+		Path corpusPath = Paths.get(sc.nextLine()).toAbsolutePath().normalize();
+
+		TokenProcessor processor = new DefaultTokenProcessor();
+		String[] AUTHORS = {"HAMILTON", "JAY", "MADISON"};
+
+		// Load training set
+		for (String author : AUTHORS) {
+			Map<Integer, Double> weights = new HashMap<>();
+			DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(corpusPath.resolve(author), ".txt");
+			Iterable<Document> documents = corpus.getDocuments();
+			PositionalInvertedIndex index = new PositionalInvertedIndex();
+
+			for (Document doc : documents) {
+				int position = 0;
+				Map<String, Integer> termMap = new HashMap<>();
+				Iterable<String> tokens = new EnglishTokenStream(doc.getContent()).getTokens();
+				for (String token : tokens) {
+					List<String> terms = processor.processToken(token);
+
+					for (String term : terms) {
+						index.addTerm(term, doc.getId(), position);
+
+						// Compute tf(t,d). Used for document weight calculations
+						termMap.put(term, termMap.getOrDefault(term, 0) + 1);
+					}
+					position++;
+				}
+				// Calculate L(d) for each document
+				double ld = termMap.values()
+					.stream()
+					.map(a -> Math.pow(1.0 + Math.log(a), 2))
+					.reduce(0.0, Double::sum);
+
+				weights.put(doc.getId(), Math.sqrt(ld));
+			}
+
+			// Save into FederalistClass
+			classes.put(author, new FederalistClass(corpus.getCorpusSize(), index, weights));
+		}
+
+		
+		// Find f(t,c) for judiciary in Hamilton class: Return df(t)
+		String query = ((DefaultTokenProcessor) processor).normalizeAndStemToken("federal");
+		System.out.println("f(t,c) = f(judiciary, HAMILTON): "
+			+ classes.get("HAMILTON").getIndex().getPostings(query).size());
+	}
+
 	private static class CorpusInfo {
 		private Path mCorpusPath;
 		private DocumentCorpus mCorpus;
@@ -300,6 +353,31 @@ public class PositionalInvertedIndexer {
 
 		public DocumentCorpus getCorpus() {
 			return mCorpus;
+		}
+	}
+
+	private static class FederalistClass {
+		private int mCorpusSize;
+		private PositionalInvertedIndex mIndex;
+		private Map<Integer, Double> mWeights;
+
+		
+		public FederalistClass(int size, PositionalInvertedIndex index, Map<Integer, Double> weights) {
+			mCorpusSize = size;
+			mIndex = index;
+			mWeights = weights;
+		}
+
+		public int getCorpusSize() {
+			return mCorpusSize;
+		}
+
+		public PositionalInvertedIndex getIndex() {
+			return mIndex;
+		}
+
+		public Map<Integer, Double> getWeights() {
+			return mWeights;
 		}
 	}
 }

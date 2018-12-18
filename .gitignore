@@ -19,5 +19,6 @@ manifest.mf
 build/
 corpus/*
 corpus_small/*
+federalist/*
 nbproject/
 btree4j.properties
