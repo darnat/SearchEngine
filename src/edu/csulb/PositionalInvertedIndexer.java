@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.Map.Entry;
 
 public class PositionalInvertedIndexer {
 	public static void main(String[] args) throws IOException, Exception {
@@ -343,93 +344,200 @@ public class PositionalInvertedIndexer {
 		////////////////////////////////////////////////////////////////////////////
 		System.out.println("Bayesian Classification");
 		
-		LinkedHashSet<String> discriminatingSet = new LinkedHashSet<String>();
-		
-		// Get discriminating vocabulary set
-		for (String author : AUTHORS) {
-			discriminatingSet.addAll(classes.get(author).getIndex().getVocabulary());
-		}
-		
 		// Data structure for storing results of Mutual Information
-		HashMap<String, HashMap<String, Double>> mutualInformation = new HashMap<String, HashMap<String, Double>>();
+		HashMap<String, ArrayList<HashMap<String, Double>>> mutualInformation = new HashMap<String, ArrayList<HashMap<String, Double>>>();
 		
 		for (String author : AUTHORS) {
 			// Key will be from the AUTHORS set and value will be the p(t,c)
-			mutualInformation.put(author, new HashMap<String, Double>());	
-		}
-		
-		// Iterate through each term in discriminating vocabulary set
-		for (String term : discriminatingSet) {
-			for (String author : AUTHORS) {
+			mutualInformation.put(author, new ArrayList<HashMap<String, Double>>());
+			
+			Index classIndex = classes.get(author).getIndex();
+			
+			for(String term : classIndex.getVocabulary()) {
 				int[][] mutualInfoArray = new int[2][2];
 				
-				Index classIndex = classes.get(author).getIndex();
-				
-				// Reflects N_11 for mutual information (in class, has term)
 				mutualInfoArray[1][1] = classIndex.getPostings(term).size();
 				
-				// Reflects N_10 for mutual information (in class, no term)
-				mutualInfoArray[1][0] = classes.get(author).getCorpusSize() - classIndex.getPostings(term).size();
+				mutualInfoArray[1][0] = classes.get(author).getCorpusSize() - mutualInfoArray[1][1];
 				
-				// numTermInOther reflects N_01 for mutual information (has term, other classes)
 				int numTermInOther = 0;
-				// numTermNotOther reflects N_00 for mutual information (no term, other classes)
 				int numTermNotOther = 0;
-				for (String auth : AUTHORS) {
-					if(!auth.equals(author)) {						
+				
+				for (String auth: AUTHORS) {
+					if (!auth.equals(author)) {
 						numTermInOther += classes.get(auth).getIndex().getPostings(term).size();
 						numTermNotOther = numTermNotOther + (classes.get(auth).getCorpusSize() 
 								- classes.get(auth).getIndex().getPostings(term).size());
 					}
 				}
+				
 				// Reflects N_01 for mutual information (other class, has term)
 				mutualInfoArray[0][1] = numTermInOther;
 				// Reflects N_00 for mutual information (other classes, no term)
 				mutualInfoArray[0][0] = numTermNotOther;
 				
 				int totalDocuments = mutualInfoArray[1][1] + mutualInfoArray[1][0] 
-						+ mutualInfoArray[0][1] + mutualInfoArray[0][0];
-
+				+ mutualInfoArray[0][1] + mutualInfoArray[0][0];
+				
 				double mutualInfoResult = (
-						((double)mutualInfoArray[1][1]/totalDocuments) * 
-						log2(
-								(double)(totalDocuments * mutualInfoArray[1][1])
-								/
-								((double)(mutualInfoArray[1][0] + mutualInfoArray[1][1]) * (mutualInfoArray[0][1] + mutualInfoArray[1][1]))
-							)
-						) + 
-						(
-						((double)mutualInfoArray[1][0]/totalDocuments) * 
-						log2(
-								(double)(totalDocuments * mutualInfoArray[1][0])
-								/
-								((double)(mutualInfoArray[1][0] + mutualInfoArray[1][1]) * (mutualInfoArray[0][0] + mutualInfoArray[1][0]))
-							)
-						) + 
-						(
-						((double)mutualInfoArray[0][1]/totalDocuments) * 
-						log2(
-								(double)(totalDocuments * mutualInfoArray[0][1])
-								/
-								((double)(mutualInfoArray[0][0] + mutualInfoArray[0][1]) * (mutualInfoArray[0][1] + mutualInfoArray[1][1]))
-							)
-						) + 
-						(
-						((double)mutualInfoArray[0][0]/totalDocuments) * 
-						log2(
-								(double)(totalDocuments * mutualInfoArray[0][0])
-								/
-								((double)(mutualInfoArray[0][0] + mutualInfoArray[0][1]) * (mutualInfoArray[0][0] + mutualInfoArray[1][0]))
-							)
-						);
+				((double)mutualInfoArray[1][1]/totalDocuments) * 
+				log2(
+						(double)(totalDocuments * mutualInfoArray[1][1])
+						/
+						((double)(mutualInfoArray[1][0] + mutualInfoArray[1][1]) * (mutualInfoArray[0][1] + mutualInfoArray[1][1]))
+					)
+				) + 
+				(
+				((double)mutualInfoArray[1][0]/totalDocuments) * 
+				log2(
+						(double)(totalDocuments * mutualInfoArray[1][0])
+						/
+						((double)(mutualInfoArray[1][0] + mutualInfoArray[1][1]) * (mutualInfoArray[0][0] + mutualInfoArray[1][0]))
+					)
+				) + 
+				(
+				((double)mutualInfoArray[0][1]/totalDocuments) * 
+				log2(
+						(double)(totalDocuments * mutualInfoArray[0][1])
+						/
+						((double)(mutualInfoArray[0][0] + mutualInfoArray[0][1]) * (mutualInfoArray[0][1] + mutualInfoArray[1][1]))
+					)
+				) + 
+				(
+				((double)mutualInfoArray[0][0]/totalDocuments) * 
+				log2(
+						(double)(totalDocuments * mutualInfoArray[0][0])
+						/
+						((double)(mutualInfoArray[0][0] + mutualInfoArray[0][1]) * (mutualInfoArray[0][0] + mutualInfoArray[1][0]))
+					)
+				);
 				
 				System.out.println("I(" + author + ", " + term + ") = " + mutualInfoResult);
-				mutualInformation.get(author).put(term, mutualInfoResult);
-				
+				HashMap<String, Double> resultMap = new HashMap<String, Double>();
+				resultMap.put(term, mutualInfoResult);
+				mutualInformation.get(author).add(resultMap);
 			}
 		}
 		
+		// Im sorting the HashMap so that I can get top 50 terms
+		for (String author : AUTHORS) {
+			System.out.println("Author: " + author);
+			
+			ArrayList<HashMap<String, Double>> mutualInfoArr = mutualInformation.get(author);
+			mutualInfoArr.sort(new Comparator<Map<String, Double>>() {
+			    public int compare(Map<String, Double> o1, Map<String, Double> o2) {
+			        Collection<Double> values1 = o1.values();
+			        Collection<Double> values2 = o2.values();
+			        if(!values1.isEmpty() && !values2.isEmpty()){
+			            return values2.iterator().next().compareTo(values1.iterator().next());
+			        }else{
+			            return 0;
+			        }
+			    }
+			});
+			// Remove any NaN in the List
+			int temp = 0;
+			for(int x = 0; x < mutualInfoArr.size(); x++) {
+				if(!mutualInfoArr.get(x).containsValue(Double.NaN)) {
+					temp = x;
+					break;
+				}
+			}
+		
+			mutualInformation.put(author, new ArrayList<HashMap<String, Double>>(mutualInfoArr.subList(temp, temp + 50)));
+			System.out.println(mutualInformation.get(author));
+		}
+		
+		// Data structure for storing results of the Probability
+		HashMap<String, ArrayList<HashMap<String, Double>>> probabilityInformation = new HashMap<String, ArrayList<HashMap<String, Double>>>();
+		LinkedHashSet<String> discriminatingTerms = new LinkedHashSet<String>();
+		
+		for (String author : AUTHORS) {
+			probabilityInformation.put(author, new ArrayList<HashMap<String, Double>>());
+
+			for (HashMap<String, Double> discrimTerm : mutualInformation.get(author)) {
+				Map.Entry<String,Double> entry = discrimTerm.entrySet().iterator().next();
+				
+				discriminatingTerms.add(entry.getKey());
+				
+				// Calculating f_tc with laplace smoothing
+				int ftc = classes.get(author).getIndex().getPostings(entry.getKey()).size() + 1;
+				
+				int fnottc = 0;
+				for (HashMap<String, Double> notTerm : mutualInformation.get(author)) {
+					if (!discrimTerm.equals(notTerm)) {
+						Map.Entry<String,Double> ent = notTerm.entrySet().iterator().next();
+						// Calculating f_t'c with laplace smoothing
+						fnottc = fnottc + classes.get(author).getIndex().getPostings(ent.getKey()).size() + 1;
+					}
+				}
+				
+				double probability = (double)ftc / fnottc;
+				System.out.println("P(" + entry.getKey() + ", " + author + ") = " + probability);
+				HashMap<String, Double> store = new HashMap<String, Double>();
+				store.put(entry.getKey(), probability);
+				probabilityInformation.get(author).add(store);
+			}
+		}
+		
+		// Index Disputed Corpus
+		DocumentCorpus disputedCorpus = DirectoryCorpus.loadTextDirectory(corpusPath.resolve("DISPUTED"), ".txt");
+		Iterable<Document> documents = disputedCorpus.getDocuments();
+		
+		PositionalInvertedIndex disputedIndex = new PositionalInvertedIndex();
+		Map<Integer, Double> weights = new HashMap<>();
+		for (Document doc : documents) {
+			int position = 0;
+			Map<String, Integer> termMap = new HashMap<>();
+			Iterable<String> tokens = new EnglishTokenStream(doc.getContent()).getTokens();
+			for (String token : tokens) {
+				List<String> terms = processor.processToken(token);
+
+				for (String term : terms) {
+					disputedIndex.addTerm(term, doc.getId(), position);
+
+					// Compute tf(t,d). Used for document weight calculations
+					termMap.put(term, termMap.getOrDefault(term, 0) + 1);
+				}
+				position++;
+			}
+			// Calculate L(d) for each document
+			double ld = termMap.values()
+				.stream()
+				.map(a -> Math.pow(1.0 + Math.log(a), 2))
+				.reduce(0.0, Double::sum);
+
+			weights.put(doc.getId(), Math.sqrt(ld));
+		}
+
+		FederalistClass disputedClass = new FederalistClass(disputedCorpus.getCorpusSize(), disputedIndex, weights);
+		
+		// Calculate total number of training doc
+		int totalTrainingSet = 0;
+		for (String author : AUTHORS) {
+			totalTrainingSet += classes.get(author).getCorpusSize();
+		}
+		
+		for (String author : AUTHORS) {
+			double probabilityC = Math.log10((double)classes.get(author).getCorpusSize()/ totalTrainingSet);
+			double sumLogs = 0.0;
+			
+			for (String term : disputedClass.getIndex().getVocabulary()) {
+				if (discriminatingTerms.contains(term)) {
+					for(HashMap<String, Double> prob : probabilityInformation.get(author)) {
+						Map.Entry<String,Double> entry = prob.entrySet().iterator().next();
+						if (entry.getKey().equals(term)) {							
+							sumLogs += Math.log10(entry.getValue());
+							break;
+						}
+					}
+				}
+			}
+			
+			System.out.println("Probability of " + author + " = " + (probabilityC + sumLogs));
+		}
 	}
+
 	
 	public static double log2(double d) {
 		double result = Math.log(d)/Math.log(2.0);
