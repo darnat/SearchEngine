@@ -338,8 +338,8 @@ public class PositionalInvertedIndexer {
 		System.out.println("f(t,c) = f(judiciary, HAMILTON): "
 			+ classes.get("HAMILTON").getIndex().getPostings(query).size() + "\n");
 		
-		rocchioClassification(processor, classes, corpusPath);
-		bayesianClassification(processor, AUTHORS, classes, corpusPath);
+		rocchioClassification2(processor, classes, corpusPath);
+		//bayesianClassification(processor, AUTHORS, classes, corpusPath);
 	}
 
 	private static void rocchioClassification(TokenProcessor processor, Map<String, FederalistClass> classes, Path corpusPath) {
@@ -393,6 +393,84 @@ public class PositionalInvertedIndexer {
 
 			System.out.println(doc.getTitle() + " will be classified in the following class: " + className + "\n");
 		}
+	}
+        
+        private static Map<String, Double> initVectorVocab(Map<String, FederalistClass> classes) {
+            //Get all vocab from H, M, J            
+            Set<String> allVocab = new HashSet<>();
+            for (Map.Entry<String, FederalistClass> fc : classes.entrySet()) 
+                allVocab.addAll(fc.getValue().getIndex().getVocabulary());
+            
+            Map<String, Double> alphaVector = new TreeMap<>();
+            for(String term : allVocab)
+                alphaVector.put(term, 0.0);
+            
+            return alphaVector;
+        }
+        
+        //Used for each class 
+        private static void defClassVector(Path corpusPath, String tag, TokenProcessor processor, FederalistClass author, Map<String, Double> vec) {
+            DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(corpusPath.resolve(tag), ".txt");
+            
+            int corpusSize = 0;
+            for (Document doc : corpus.getDocuments()) {
+                Iterable<String> tokens = new EnglishTokenStream(doc.getContent()).getTokens();
+                
+                for (String token : tokens) {
+                    List<String> terms = processor.processToken(token);
+                    for (String term : terms) {
+                        vec.put(term, vec.get(term) + 1); // establish term frequency
+                    }
+                }
+                ++corpusSize;
+            }
+            
+            ////////////////////////////////////////////////
+            double ld = 0.0;
+            
+            for (String key : vec.keySet()) {
+                if(vec.get(key) != 0.0) {
+                    vec.put(key, 1 + Math.log(vec.get(key))); // not normalized
+                    ld += Math.pow(vec.get(key), 2); // store the sum of the squares
+                    vec.put(key, vec.get(key) / corpusSize);
+                }
+            }
+            
+            ld = Math.sqrt(ld); //sqrt for normalization below
+            
+            //Normalize here via ld
+            for (String key : vec.keySet()) {
+                if(vec.get(key) != 0.0)
+                    vec.put(key, vec.get(key) / ld); //normalized
+                
+                System.out.println(key + " => " + vec.get(key));
+            }
+        }
+        
+        private static void rocchioClassification2(TokenProcessor processor, Map<String, FederalistClass> classes, Path corpusPath) {
+            //construct alphaVector -> get all vocab and set to 0
+            Map<String, Double> jayVec = initVectorVocab(classes);
+            Map<String, Double> hamiltonVec = initVectorVocab(classes);
+            Map<String, Double> madisonVec = initVectorVocab(classes);
+            
+            //get normalized vector u_d
+            defClassVector(corpusPath, "JAY", processor, classes.get("JAY"), jayVec);
+            defClassVector(corpusPath, "HAMILTON", processor, classes.get("HAMILTON"), hamiltonVec);
+            defClassVector(corpusPath,"MADISON", processor, classes.get("MADISON"), madisonVec);
+            
+            //Now, classify each disputed document
+            DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(corpusPath.resolve("DISPUTED"), ".txt");
+            Iterable<Document> disputed = corpus.getDocuments();
+
+            //Initialize Maps DocTitle -> HashMap<term, wdt>
+            Map<String, HashMap<String,Double>> disputedVec = new HashMap<>();
+            for (int i = 0; i < corpus.getCorpusSize(); ++i) 
+                disputedVec.put(corpus.getDocument(i).getTitle(),(HashMap<String, Double>) initVectorVocab(classes));
+            
+            for (Document doc: disputed) {
+                // Do similiar procedure to def class vector. 
+                //However, only do for this document and put vector disputedVec
+            }
 	}
 
 	private static void bayesianClassification(TokenProcessor processor, String[] AUTHORS, Map<String, FederalistClass> classes, Path corpusPath) {
