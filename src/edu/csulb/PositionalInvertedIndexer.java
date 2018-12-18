@@ -295,12 +295,13 @@ public class PositionalInvertedIndexer {
 
 		TokenProcessor processor = new DefaultTokenProcessor();
 		String[] AUTHORS = {"HAMILTON", "JAY", "MADISON"};
-
+		
 		// Load training set
 		for (String author : AUTHORS) {
 			Map<Integer, Double> weights = new HashMap<>();
 			DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(corpusPath.resolve(author), ".txt");
 			Iterable<Document> documents = corpus.getDocuments();
+			
 			PositionalInvertedIndex index = new PositionalInvertedIndex();
 
 			for (Document doc : documents) {
@@ -333,9 +334,105 @@ public class PositionalInvertedIndexer {
 
 		
 		// Find f(t,c) for judiciary in Hamilton class: Return df(t)
-		String query = ((DefaultTokenProcessor) processor).normalizeAndStemToken("federal");
+		String query = ((DefaultTokenProcessor) processor).normalizeAndStemToken("judiciary");
 		System.out.println("f(t,c) = f(judiciary, HAMILTON): "
 			+ classes.get("HAMILTON").getIndex().getPostings(query).size());
+		
+		////////////////////////////////////////////////////////////////////////////
+		//				Bayesian Classification									  //
+		////////////////////////////////////////////////////////////////////////////
+		System.out.println("Bayesian Classification");
+		
+		int totalCorpSize = 0;
+		LinkedHashSet<String> discriminatingSet = new LinkedHashSet<String>();
+		
+		// Calculate size of corpus (N) and discriminating vocabulary set
+		for (String author : AUTHORS) {
+			totalCorpSize += classes.get(author).getCorpusSize();
+			discriminatingSet.addAll(classes.get(author).getIndex().getVocabulary());
+		}
+		
+		HashMap<String, HashMap<String, Double>> mutualInformation = new HashMap<String, HashMap<String, Double>>();
+		
+		// Data structure for storing p(t,c_H), p(t,c_M), p(t,c_J)
+		for (String author : AUTHORS) {
+			// Key will be from the AUTHORS set and value will be the p(t,c)
+			mutualInformation.put(author, new HashMap<String, Double>());	
+		}
+		
+		// Iterate through each term in discriminating vocabulary set
+		for (String term : discriminatingSet) {
+			for (String author : AUTHORS) {
+				int[][] mutualInfoArray = new int[2][2];
+				
+				Index classIndex = classes.get(author).getIndex();
+				
+				// Reflects N_11 for mutual information (in class, has term)
+				mutualInfoArray[1][1] = classIndex.getPostings(term).size();
+				
+				// Reflects N_10 for mutual information (in class, no term)
+				mutualInfoArray[1][0] = classes.get(author).getCorpusSize() - classIndex.getPostings(term).size();
+				
+				// numTermInOther reflects N_01 for mutual information (has term, other classes)
+				int numTermInOther = 0;
+				// numTermNotOther reflects N_00 for mutual information (no term, other classes)
+				int numTermNotOther = 0;
+				for (String auth : AUTHORS) {
+					numTermInOther += classes.get(auth).getIndex().getPostings(term).size();
+					numTermNotOther = numTermNotOther + (classes.get(auth).getCorpusSize() 
+							- classes.get(auth).getIndex().getPostings(term).size());
+				}
+				// Reflects N_01 for mutual information (other class, has term)
+				mutualInfoArray[0][1] = numTermInOther;
+				// Reflects N_00 for mutual information (other classes, no term)
+				mutualInfoArray[0][0] = numTermNotOther;
+				
+				int totalDocuments = mutualInfoArray[1][1] + mutualInfoArray[1][0] 
+						+ mutualInfoArray[0][1] + mutualInfoArray[0][0];
+				
+				double mutualInfoResult = (double)((
+						((double)mutualInfoArray[1][1]/totalDocuments) * 
+						log2(
+								(double)(totalDocuments * mutualInfoArray[1][1])
+								/
+								((double)(mutualInfoArray[1][0] + mutualInfoArray[1][1]) * (mutualInfoArray[0][1] + mutualInfoArray[1][1]))
+							)
+						) + 
+						(
+						((double)mutualInfoArray[1][0]/totalDocuments) * 
+						log2(
+								(double)(totalDocuments * mutualInfoArray[1][0])
+								/
+								((double)(mutualInfoArray[1][0] + mutualInfoArray[1][1]) * (mutualInfoArray[0][0] + mutualInfoArray[1][0]))
+							)
+						) + 
+						(
+						((double)mutualInfoArray[0][1]/totalDocuments) * 
+						log2(
+								(double)(totalDocuments * mutualInfoArray[0][1])
+								/
+								((double)(mutualInfoArray[0][0] + mutualInfoArray[0][1]) * (mutualInfoArray[0][1] + mutualInfoArray[1][1]))
+							)
+						) + 
+						(
+						((double)mutualInfoArray[0][0]/totalDocuments) * 
+						log2(
+								(double)(totalDocuments * mutualInfoArray[0][0])
+								/
+								((double)(mutualInfoArray[0][0] + mutualInfoArray[0][1]) * (mutualInfoArray[0][0] + mutualInfoArray[1][0]))
+							)
+						)
+					);
+				
+				System.out.println("I(" + author + ", " + term + ") = " + mutualInfoResult);
+				
+			}
+		}
+		
+	}
+	
+	public static double log2(double d) {
+		return Math.log(d)/Math.log(2.0);
 	}
 
 	private static class CorpusInfo {
