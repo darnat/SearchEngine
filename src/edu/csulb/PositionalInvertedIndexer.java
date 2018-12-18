@@ -339,6 +339,10 @@ public class PositionalInvertedIndexer {
 		System.out.println("f(t,c) = f(judiciary, HAMILTON): "
 			+ classes.get("HAMILTON").getIndex().getPostings(query).size());
 		
+		bayesianClassification(processor, AUTHORS, classes, corpusPath);
+	}
+	
+	private static void bayesianClassification(TokenProcessor processor, String[] AUTHORS, Map<String, FederalistClass> classes, Path corpusPath) {
 		////////////////////////////////////////////////////////////////////////////
 		//				Bayesian Classification									  //
 		////////////////////////////////////////////////////////////////////////////
@@ -493,7 +497,7 @@ public class PositionalInvertedIndexer {
 		Iterable<Document> documents = disputedCorpus.getDocuments();
 		
 		PositionalInvertedIndex disputedIndex = new PositionalInvertedIndex();
-		Map<Integer, Double> weights = new HashMap<>();
+
 		for (Document doc : documents) {
 			int position = 0;
 			Map<String, Integer> termMap = new HashMap<>();
@@ -509,14 +513,7 @@ public class PositionalInvertedIndexer {
 				}
 				position++;
 			}
-			// Calculate L(d) for each document
-			double ld = termMap.values()
-				.stream()
-				.map(a -> Math.pow(1.0 + Math.log(a), 2))
-				.reduce(0.0, Double::sum);
 
-			weights.put(doc.getId(), Math.sqrt(ld));
-			
 			for(String author : AUTHORS) {
 				double probabilityC = Math.log10((double)classes.get(author).getCorpusSize()/ totalTrainingSet);
 				double sumLogs = 0.0;
@@ -535,7 +532,6 @@ public class PositionalInvertedIndexer {
 			}
 		}
 	}
-
 	
 	public static double log2(double d) {
 		double result = Math.log(d)/Math.log(2.0);
