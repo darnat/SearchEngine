@@ -390,7 +390,7 @@ public class PositionalInvertedIndexer {
 				int totalDocuments = mutualInfoArray[1][1] + mutualInfoArray[1][0] 
 						+ mutualInfoArray[0][1] + mutualInfoArray[0][0];
 				
-				double mutualInfoResult = (double)((
+				double mutualInfoResult = (
 						((double)mutualInfoArray[1][1]/totalDocuments) * 
 						log2(
 								(double)(totalDocuments * mutualInfoArray[1][1])
@@ -421,18 +421,24 @@ public class PositionalInvertedIndexer {
 								/
 								((double)(mutualInfoArray[0][0] + mutualInfoArray[0][1]) * (mutualInfoArray[0][0] + mutualInfoArray[1][0]))
 							)
-						)
-					);
+						);
 				
-				System.out.println("I(" + author + ", " + term + ") = " + mutualInfoResult);
+//				System.out.println("I(" + author + ", " + term + ") = " + mutualInfoResult);
+				mutualInformation.get(author).put(term, mutualInfoResult);
 				
 			}
 		}
 		
+		
+		
 	}
 	
 	public static double log2(double d) {
-		return Math.log(d)/Math.log(2.0);
+		double result = Math.log(d)/Math.log(2.0);
+		if(result < 0) {
+			return 0;
+		}
+		return result;
 	}
 
 	private static class CorpusInfo {
