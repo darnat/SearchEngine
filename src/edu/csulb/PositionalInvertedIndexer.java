@@ -412,7 +412,7 @@ public class PositionalInvertedIndexer {
 					)
 				);
 				
-				System.out.println("I(" + author + ", " + term + ") = " + mutualInfoResult);
+//				System.out.println("I(" + author + ", " + term + ") = " + mutualInfoResult);
 				HashMap<String, Double> resultMap = new HashMap<String, Double>();
 				resultMap.put(term, mutualInfoResult);
 				mutualInformation.get(author).add(resultMap);
@@ -445,20 +445,22 @@ public class PositionalInvertedIndexer {
 			}
 		
 			mutualInformation.put(author, new ArrayList<HashMap<String, Double>>(mutualInfoArr.subList(temp, temp + 50)));
-			System.out.println(mutualInformation.get(author));
+			
+			// Simply to print out the 50 discriminate vocab for each
+			for(HashMap<String, Double> term : mutualInformation.get(author)) {
+				Map.Entry<String,Double> entry = term.entrySet().iterator().next();
+				System.out.println(entry.getKey() + " - " + entry.getValue());
+			}
 		}
 		
 		// Data structure for storing results of the Probability
 		HashMap<String, ArrayList<HashMap<String, Double>>> probabilityInformation = new HashMap<String, ArrayList<HashMap<String, Double>>>();
-		LinkedHashSet<String> discriminatingTerms = new LinkedHashSet<String>();
 		
 		for (String author : AUTHORS) {
 			probabilityInformation.put(author, new ArrayList<HashMap<String, Double>>());
 
 			for (HashMap<String, Double> discrimTerm : mutualInformation.get(author)) {
 				Map.Entry<String,Double> entry = discrimTerm.entrySet().iterator().next();
-				
-				discriminatingTerms.add(entry.getKey());
 				
 				// Calculating f_tc with laplace smoothing
 				int ftc = classes.get(author).getIndex().getPostings(entry.getKey()).size() + 1;
@@ -473,7 +475,7 @@ public class PositionalInvertedIndexer {
 				}
 				
 				double probability = (double)ftc / fnottc;
-				System.out.println("P(" + entry.getKey() + ", " + author + ") = " + probability);
+//				System.out.println("P(" + entry.getKey() + ", " + author + ") = " + probability);
 				HashMap<String, Double> store = new HashMap<String, Double>();
 				store.put(entry.getKey(), probability);
 				probabilityInformation.get(author).add(store);
@@ -520,13 +522,12 @@ public class PositionalInvertedIndexer {
 				double sumLogs = 0.0;
 				
 				for (String term : termMap.keySet()) {
-					if (discriminatingTerms.contains(term)) {
-						for(HashMap<String, Double> prob : probabilityInformation.get(author)) {
-							Map.Entry<String,Double> entry = prob.entrySet().iterator().next();
-							if (entry.getKey().equals(term)) {							
-								sumLogs += Math.log10(entry.getValue());
-								break;
-							}
+					for (HashMap<String, Double> prob : probabilityInformation.get(author)) {
+						Map.Entry<String, Double> entry = prob.entrySet().iterator().next();
+						
+						if (entry.getKey().equals(term)) {
+							sumLogs += Math.log10(entry.getValue());
+							break;
 						}
 					}
 				}
