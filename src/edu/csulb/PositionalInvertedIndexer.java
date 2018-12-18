@@ -17,6 +17,7 @@ import cecs429.text.DefaultTokenProcessor;
 import cecs429.text.EnglishTokenStream;
 import cecs429.text.Stemmer;
 import cecs429.text.TokenProcessor;
+import javafx.util.Pair;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -502,12 +503,19 @@ public class PositionalInvertedIndexer {
 		}
 	
 		mutualInformation.put(author, new ArrayList<HashMap<String, Double>>(mutualInfoArr.subList(temp, temp + 50)));
-		
-		// Simply to print out the 50 discriminate vocab for each
+	}
+	
+	PriorityQueue<DataStore> mutualInformation50Term = new PriorityQueue<DataStore>();
+	
+	for(String author : AUTHORS) {
 		for(HashMap<String, Double> term : mutualInformation.get(author)) {
 			Map.Entry<String,Double> entry = term.entrySet().iterator().next();
-			System.out.println(entry.getKey() + " - " + entry.getValue());
+			mutualInformation50Term.add(new DataStore(entry.getValue(), entry.getKey()));
 		}
+	}
+	
+	for(DataStore store : mutualInformation50Term) {
+		System.out.println(store.getTerm() + " - " + store.getScore());
 	}
 	
 	// Data structure for storing results of the Probability
@@ -515,26 +523,20 @@ public class PositionalInvertedIndexer {
 	
 	for (String author : AUTHORS) {
 		probabilityInformation.put(author, new ArrayList<HashMap<String, Double>>());
-
-		for (HashMap<String, Double> discrimTerm : mutualInformation.get(author)) {
-			Map.Entry<String,Double> entry = discrimTerm.entrySet().iterator().next();
-			
-			// Calculating f_tc with laplace smoothing
-			int ftc = classes.get(author).getIndex().getPostings(entry.getKey()).size() + 1;
+		
+		for(DataStore discTerm : mutualInformation50Term) {
+			int ftc = classes.get(author).getIndex().getPostings(discTerm.getTerm()).size() + 1;
 			
 			int fnottc = 0;
-			for (HashMap<String, Double> notTerm : mutualInformation.get(author)) {
-				if (!discrimTerm.equals(notTerm)) {
-					Map.Entry<String,Double> ent = notTerm.entrySet().iterator().next();
-					// Calculating f_t'c with laplace smoothing
-					fnottc = fnottc + classes.get(author).getIndex().getPostings(ent.getKey()).size() + 1;
+			for(DataStore notTerm : mutualInformation50Term) {
+				if(!discTerm.getTerm().equals(notTerm.getTerm())) {
+					fnottc = fnottc + classes.get(author).getIndex().getPostings(notTerm.getTerm()).size() + 1;
 				}
 			}
 			
 			double probability = (double)ftc / fnottc;
-//				System.out.println("P(" + entry.getKey() + ", " + author + ") = " + probability);
 			HashMap<String, Double> store = new HashMap<String, Double>();
-			store.put(entry.getKey(), probability);
+			store.put(discTerm.getTerm(), probability);
 			probabilityInformation.get(author).add(store);
 		}
 	}
@@ -597,6 +599,30 @@ public class PositionalInvertedIndexer {
 			return 0.0;
 		}
 		return result;
+	}
+	
+	private static class DataStore implements Comparable<DataStore> {
+		private double score;
+		private String term;
+		
+		DataStore(double score, String term) {
+			this.score = score;
+			this.term = term;
+		}
+		
+		public double getScore() {
+			return score;
+		}
+		
+		public String getTerm() {
+			return term;
+		}
+		@Override
+		public int compareTo(DataStore o) {
+			return Double.compare(o.getScore(), this.score);
+		}
+		
+		
 	}
 
 	private static class CorpusInfo {
