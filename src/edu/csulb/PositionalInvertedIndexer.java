@@ -396,13 +396,13 @@ public class PositionalInvertedIndexer {
 		}
 	}
         
-        private static Map<String, Double> initVectorVocab(Map<String, FederalistClass> classes) {
+        private static TreeMap<String, Double> initVectorVocab(Map<String, FederalistClass> classes) {
             //Get all vocab from H, M, J            
             Set<String> allVocab = new HashSet<>();
             for (Map.Entry<String, FederalistClass> fc : classes.entrySet()) 
                 allVocab.addAll(fc.getValue().getIndex().getVocabulary());
             
-            Map<String, Double> alphaVector = new TreeMap<>();
+            TreeMap<String, Double> alphaVector = new TreeMap<>();
             for(String term : allVocab)
                 alphaVector.put(term, 0.0);
             
@@ -464,12 +464,12 @@ public class PositionalInvertedIndexer {
             Iterable<Document> disputed = corpus.getDocuments();
 
             //Initialize Maps DocTitle -> HashMap<term, wdt>
-            Map<String, HashMap<String,Double>> disputedVec = new HashMap<>();
+            Map<String, TreeMap<String,Double>> disputedVec = new TreeMap<>();
             for (int i = 0; i < corpus.getCorpusSize(); ++i) 
-                disputedVec.put(corpus.getDocument(i).getTitle(),(HashMap<String, Double>) initVectorVocab(classes));
+                disputedVec.put(corpus.getDocument(i).getTitle(), initVectorVocab(classes));
             
             for (Document doc: disputed) {
-                // Do similiar procedure to def class vector. 
+                // Do similiar procedure to defClassVector (not for the entire disputed corpus). 
                 //However, only do for this document and put vector disputedVec
             }
 	}
