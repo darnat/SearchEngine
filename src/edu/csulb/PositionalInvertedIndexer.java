@@ -465,13 +465,13 @@ public class PositionalInvertedIndexer {
 
             //Initialize Maps DocTitle -> HashMap<term, wdt>
             Map<String, TreeMap<String,Double>> disputedVec = new TreeMap<>();
-            for (int i = 0; i < corpus.getCorpusSize(); ++i) 
-                disputedVec.put(corpus.getDocument(i).getTitle(), initVectorVocab(classes));
-            
-            
-            //Compute similarity of each vector Author -> sum of weights
-            TreeMap<String,Double> authorGuess = new TreeMap<>();
-            
+            for (int i = 0; i < corpus.getCorpusSize(); ++i) {
+                TreeMap<String, Double> v = new TreeMap<>();
+                v = initVectorVocab(classes);
+                disputedVec.put(corpus.getDocument(i).getTitle(), v);
+                System.out.println("Vector degree = " + disputedVec.get(corpus.getDocument(i).getTitle()).size());
+            }
+                        
             for (Document doc: disputed) {
                 // Do similiar procedure to defClassVector (not for the entire disputed corpus). 
                 // However, only do for this document and put vector disputedVec
@@ -482,26 +482,13 @@ public class PositionalInvertedIndexer {
                 for (String token : tokens) {
                     List<String> terms = processor.processToken(token);
                     for (String term : terms) {
-                        map.put(term, map.getOrDefault(term, 0.0) + 1); // establish term frequency
+                        map.put(term, map.get(term) + 1); // establish term frequency
+                        
+                        //This crashes.... if ordefault, then theoutput is wrong. 
+                        // I think its because the the "map" doesn't get copied correctly
                     }
                 }
                 
-                /*
-                double ld = 0.0;
-                
-                
-                
-                for(String key : map.keySet()) {
-                    map.put(key, 1 + Math.log(map.get(key)));
-                    ld += Math.pow(map.get(key), 2);
-                }
-                
-                for(String key : map.keySet()) {
-                     map.put(key, map.get(key) / ld);
-                }
-                
-                disputedVec.put(doc.getTitle(), map);
-                */
                 double ld = 0.0;
             
                 for (String key : map.keySet()) {
@@ -539,17 +526,21 @@ public class PositionalInvertedIndexer {
             for (String key : madisonVec.keySet()) 
                 sumM += madisonVec.get(key);
             
-            //Now subtract
+            //Now subtract (Doesnt do all docs)
             for (int i = 49; i <= 57; ++i) {
-                
-            TreeMap<String,Double> paper52 = disputedVec.get("paper_52.txt");
-            for (String key : paper52.keySet()) 
-            sum52 += paper52.get(key);
-            
-            System.out.println("Doc" + i + ": " + sum52);
-            System.out.println("Hamilton: " +  (sum52 - sumH));
-            System.out.println("Madison: " +  (sum52 - sumM));
-            System.out.println("Jay: " +  (sum52 - sumJ));
+                TreeMap<String,Double> paper = disputedVec.get("paper_" + i + ".txt");
+                for (String key : paper.keySet()) 
+                    sum52 += paper.get(key);
+
+                System.out.println("Doc" + i + ": " + sum52);
+                System.out.println("Hamilton: " +  sumH + " - "+ (sum52 - sumH));
+                System.out.println("Madison: " +  sumM + " - "+ (sum52 - sumM));
+                System.out.println("Jay: " +  sumJ + " - "+ (sum52 - sumJ));
+
+                sum52 = 0.0;
+                sumH = 0.0;
+                sumM = 0.0;
+                sumJ = 0.0;
             }
             
 	}
