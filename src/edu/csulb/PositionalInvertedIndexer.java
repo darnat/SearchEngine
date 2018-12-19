@@ -468,10 +468,90 @@ public class PositionalInvertedIndexer {
             for (int i = 0; i < corpus.getCorpusSize(); ++i) 
                 disputedVec.put(corpus.getDocument(i).getTitle(), initVectorVocab(classes));
             
+            
+            //Compute similarity of each vector Author -> sum of weights
+            TreeMap<String,Double> authorGuess = new TreeMap<>();
+            
             for (Document doc: disputed) {
                 // Do similiar procedure to defClassVector (not for the entire disputed corpus). 
-                //However, only do for this document and put vector disputedVec
+                // However, only do for this document and put vector disputedVec
+                Iterable<String> tokens = new EnglishTokenStream(doc.getContent()).getTokens();
+                TreeMap<String,Double> map = new TreeMap<>();
+                map = disputedVec.get(doc.getTitle());// placeholder
+                 
+                for (String token : tokens) {
+                    List<String> terms = processor.processToken(token);
+                    for (String term : terms) {
+                        map.put(term, map.getOrDefault(term, 0.0) + 1); // establish term frequency
+                    }
+                }
+                
+                /*
+                double ld = 0.0;
+                
+                
+                
+                for(String key : map.keySet()) {
+                    map.put(key, 1 + Math.log(map.get(key)));
+                    ld += Math.pow(map.get(key), 2);
+                }
+                
+                for(String key : map.keySet()) {
+                     map.put(key, map.get(key) / ld);
+                }
+                
+                disputedVec.put(doc.getTitle(), map);
+                */
+                double ld = 0.0;
+            
+                for (String key : map.keySet()) {
+                    if(map.get(key) != 0.0) {
+                        map.put(key, 1 + Math.log(map.get(key))); // not normalized
+                        ld += Math.pow(map.get(key), 2); // store the sum of the squares
+                    }
+                }
+
+                ld = Math.sqrt(ld); //sqrt for normalization below
+
+                //Normalize here via ld
+                for (String key : map.keySet()) {
+                    if(map.get(key) != 0.0)
+                        map.put(key, map.get(key) / ld); //normalized
+
+                    System.out.println(key + " => " + map.get(key));
+                }
+                
+                disputedVec.put(doc.getTitle(), map);
             }
+            
+            double sum52 = 0.0;
+            double sumH = 0.0;
+            double sumM = 0.0;
+            double sumJ = 0.0;
+            //Now we can compare the vectors Add all up and subtract
+                      
+            for (String key : hamiltonVec.keySet()) 
+                sumH += hamiltonVec.get(key);
+            
+            for (String key : jayVec.keySet()) 
+                sumJ += jayVec.get(key);
+            
+            for (String key : madisonVec.keySet()) 
+                sumM += madisonVec.get(key);
+            
+            //Now subtract
+            for (int i = 49; i <= 57; ++i) {
+                
+            TreeMap<String,Double> paper52 = disputedVec.get("paper_52.txt");
+            for (String key : paper52.keySet()) 
+            sum52 += paper52.get(key);
+            
+            System.out.println("Doc" + i + ": " + sum52);
+            System.out.println("Hamilton: " +  (sum52 - sumH));
+            System.out.println("Madison: " +  (sum52 - sumM));
+            System.out.println("Jay: " +  (sum52 - sumJ));
+            }
+            
 	}
 
 	private static void bayesianClassification(TokenProcessor processor, String[] AUTHORS, Map<String, FederalistClass> classes, Path corpusPath) {
