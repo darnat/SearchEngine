@@ -552,6 +552,7 @@ public class PositionalInvertedIndexer {
 	System.out.println("Bayesian Classification");
 	
 	// Data structure for storing results of Mutual Information
+	// Author key maps to Arraylist of HashMap but IMPORTANT: hashmaps only have one key value pair
 	HashMap<String, ArrayList<HashMap<String, Double>>> mutualInformation = new HashMap<String, ArrayList<HashMap<String, Double>>>();
 	
 	for (String author : AUTHORS) {
@@ -560,16 +561,18 @@ public class PositionalInvertedIndexer {
 		
 		Index classIndex = classes.get(author).getIndex();
 		
+		// Iterate through each term in Index
 		for(String term : classIndex.getVocabulary()) {
 			int[][] mutualInfoArray = new int[2][2];
-			
+			// Reflects N_11 for mutual information (in class, has term)
 			mutualInfoArray[1][1] = classIndex.getPostings(term).size();
-			
+			// Reflects N_10 for mutual information (in class, no term)
 			mutualInfoArray[1][0] = classes.get(author).getCorpusSize() - mutualInfoArray[1][1];
 			
 			int numTermInOther = 0;
 			int numTermNotOther = 0;
 			
+			// Check for other classes other than current class
 			for (String auth: AUTHORS) {
 				if (!auth.equals(author)) {
 					numTermInOther += classes.get(auth).getIndex().getPostings(term).size();
@@ -586,6 +589,7 @@ public class PositionalInvertedIndexer {
 			int totalDocuments = mutualInfoArray[1][1] + mutualInfoArray[1][0] 
 			+ mutualInfoArray[0][1] + mutualInfoArray[0][0];
 			
+			// BIG equation for I(c,t)
 			double mutualInfoResult = (
 			((double)mutualInfoArray[1][1]/totalDocuments) * 
 			log2(
@@ -631,6 +635,7 @@ public class PositionalInvertedIndexer {
 		System.out.println("Author: " + author);
 		
 		ArrayList<HashMap<String, Double>> mutualInfoArr = mutualInformation.get(author);
+		// Sort the arraylist of hashmaps
 		mutualInfoArr.sort(new Comparator<Map<String, Double>>() {
 			public int compare(Map<String, Double> o1, Map<String, Double> o2) {
 				Collection<Double> values1 = o1.values();
@@ -650,12 +655,13 @@ public class PositionalInvertedIndexer {
 				break;
 			}
 		}
-	
+
 		mutualInformation.put(author, new ArrayList<HashMap<String, Double>>(mutualInfoArr.subList(temp, temp + 50)));
 	}
 	
 	PriorityQueue<DataStore> mutualInformation50Term = new PriorityQueue<DataStore>();
 	
+	// get terms and put in the priority queue
 	for(String author : AUTHORS) {
 		for(HashMap<String, Double> term : mutualInformation.get(author)) {
 			Map.Entry<String,Double> entry = term.entrySet().iterator().next();
@@ -663,6 +669,7 @@ public class PositionalInvertedIndexer {
 		}
 	}
 	
+	// display the results
 	for(DataStore store : mutualInformation50Term) {
 		System.out.println(store.getTerm() + " - " + store.getScore());
 	}
@@ -670,12 +677,16 @@ public class PositionalInvertedIndexer {
 	// Data structure for storing results of the Probability
 	HashMap<String, ArrayList<HashMap<String, Double>>> probabilityInformation = new HashMap<String, ArrayList<HashMap<String, Double>>>();
 	
+	// calculate the probability of Classes
 	for (String author : AUTHORS) {
 		probabilityInformation.put(author, new ArrayList<HashMap<String, Double>>());
 		
+		// go through discriminate term set
 		for(DataStore discTerm : mutualInformation50Term) {
+			// calculate f_tc
 			int ftc = classes.get(author).getIndex().getPostings(discTerm.getTerm()).size() + 1;
 			
+			// calculate f_t'c
 			int fnottc = 0;
 			for(DataStore notTerm : mutualInformation50Term) {
 				if(!discTerm.getTerm().equals(notTerm.getTerm())) {
